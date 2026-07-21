@@ -16,6 +16,7 @@ npm-debug.log*
 
 # Prisma
 apps/api/prisma/*.db
+apps/api/src/generated/
 
 # Flutter / Dart (apps/mobile)
 .dart_tool/

@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                    String    @id
+  email                 String
+  emailNormalized       String    @unique(map: "users_email_normalized_uq") @map("email_normalized")
+  phoneNumber           String?   @map("phone_number")
+  phoneNumberNormalized String?   @map("phone_number_normalized")
+  passwordHash          String    @map("password_hash")
+  name                  String
+  avatarFileId          String?   @map("avatar_file_id")
+  status                String    @default("active")
+  emailVerifiedAt       DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt       DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+  lastLoginAt           DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sessions               AuthSession[]
+  passwordResetTokens    PasswordResetToken[]
+  devices                Device[]
+  notificationPreference UserNotificationPreference?
+
+  @@map("users")
+}
+
+model AuthSession {
+  id               String    @id
+  userId           String    @map("user_id")
+  deviceId         String?   @map("device_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  tokenFamilyId    String    @map("token_family_id")
+  parentSessionId  String?   @map("parent_session_id")
+  status           String    @default("active")
+  issuedAt         DateTime  @map("issued_at") @db.Timestamptz(6)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason    String?   @map("revoked_reason")
+  ipAddress        String?   @map("ip_address") @db.Inet
+  userAgent        String?   @map("user_agent")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentSession AuthSession?  @relation("SessionRotation", fields: [parentSessionId], references: [id])
+  childSessions AuthSession[] @relation("SessionRotation")
+
+  @@index([userId, status], map: "auth_sessions_user_status_idx")
+  @@index([tokenFamilyId], map: "auth_sessions_family_idx")
+  @@map("auth_sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id
+  userId    String    @map("user_id")
+  tokenHash String    @unique(map: "password_reset_tokens_hash_uq") @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model Device {
+  id         String    @id
+  userId     String    @map("user_id")
+  platform   String
+  appVersion String?   @map("app_version")
+  deviceName String?   @map("device_name")
+  pushProvider String? @map("push_provider")
+  pushToken  String?   @map("push_token")
+  locale     String?
+  timezone   String?
+  status     String    @default("active")
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status], map: "devices_user_status_idx")
+  @@map("devices")
+}
+
+model UserNotificationPreference {
+  userId         String   @id @map("user_id")
+  bookingUpdates Boolean  @default(true) @map("booking_updates")
+  paymentUpdates Boolean  @default(true) @map("payment_updates")
+  queueUpdates   Boolean  @default(true) @map("queue_updates")
+  marketing      Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository State
 
-Docs-only, pre-implementation. `apps/api`, `apps/mobile`, and `infrastructure/` are empty placeholders — there is no code, no package.json, no Makefile, and nothing runnable yet. `.github/workflows/` has `api-ci.yml` and `mobile-ci.yml`; both skip themselves until `apps/api/package.json` / `apps/mobile/pubspec.yaml` exist, then enforce the doc-prescribed pipeline (npm scripts like `format:check`, `lint`, `typecheck`, `test`, `test:integration`, `openapi:generate` must exist when scaffolding). All project knowledge lives in `docs/`. The first implementation work is scaffolding the monorepo described in `docs/01-system-architecture.md` §7.
+Backend foundation (M1) is scaffolded and green: `apps/api` runs NestJS 11 with health endpoints, response/error envelopes, env validation, Prisma 7 + PostgreSQL, and migrations 001–003 (users, auth sessions, password reset tokens, devices, notification preferences). `apps/mobile` and `infrastructure/` are still empty. Next milestone: M2 authentication (`docs/backend/authentication.md`). CI workflows skip themselves until the relevant app manifest exists (`apps/mobile/pubspec.yaml` still pending).
 
 ## What This Is
 
@@ -22,14 +22,20 @@ Conflict resolution order (higher wins for "what", lower docs win for implementa
 
 The detail docs (4–5) are newer than the architecture doc in places — see Known Doc Conflicts below. Business-rule changes must update the relevant doc before code changes.
 
-## Commands (planned — none exist yet)
+## Commands
 
-The docs prescribe, at repo root: `docker-compose.yml`, `.env.example`, and a `Makefile` with targets `bootstrap`, `dev`, `test`, `test-integration`, `migrate`, `seed`, plus `scripts/{bootstrap,generate-api-client,migrate,seed}.sh`. Create these when scaffolding and update this section with the real invocations.
+Node 22 (`.nvmrc` — run `nvm use` first; Prisma 7 requires ≥22.12) and npm (ADR 0009). From repo root:
 
-- Docker Compose runs postgres, redis, S3-compatible storage (MinIO-style on :9000), api, worker. Flutter runs outside Docker (hot reload / emulator). API on :3000, prefix `/api/v1`; Android emulator reaches it at `http://10.0.2.2:3000/api/v1`.
-- Backend CI order: format → lint → typecheck → prisma generate → validate migrations → unit → integration → build → generate OpenAPI → contract check → container build.
-- Mobile CI order: `flutter pub get` → codegen (build_runner, gen-l10n — exact invocations not yet defined in docs) → format → analyze → unit → widget → contract compile check → Android build.
-- Unspecified anywhere: package manager, Node version, Flutter/Dart version. Pick and record in an ADR.
+- `make bootstrap` — npm install, copy `.env.example` → `apps/api/.env`, start postgres/redis/minio via Docker Compose, migrate, generate Prisma client
+- `make dev` — infra + API watch mode on :3000 (`/api/v1` prefix; Swagger UI at `/docs` outside production; Android emulator uses `http://10.0.2.2:3000/api/v1`)
+- `make test` / `make test-integration` — unit tests / integration tests (creates + migrates `antrein_test` DB, needs Docker up)
+- `make migrate` / `make seed` — `prisma migrate deploy` / seed script
+
+From `apps/api` directly: `npm run test -- --testPathPattern id.spec` for a single test file, `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build`, `npm run openapi:generate` (writes `packages/api-contracts/openapi/antrein-v1.json`).
+
+Prisma 7 specifics: no `url` in `schema.prisma` — the connection comes from `prisma.config.ts` (loads dotenv) for CLI and from `@prisma/adapter-pg` in `PrismaService` at runtime. Generated client lives at `src/generated/prisma/` (gitignored) — run `npx prisma generate` after schema changes and before typecheck. Migrations are hand-written SQL under `prisma/migrations/` following the numbered sequence in `database-design.md` §82.
+
+Mobile (once scaffolded) CI order: `flutter pub get` → codegen (build_runner, gen-l10n) → format → analyze → unit → widget → contract compile check. Flutter version still unpinned — record in an ADR when scaffolding.
 
 ## Architecture
 

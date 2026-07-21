@@ -1,0 +1,28 @@
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
+import { validateEnv } from './config/env.validation';
+import { HttpExceptionFilter } from './common/errors/http-exception.filter';
+import { createValidationPipe } from './common/errors/validation.pipe-factory';
+import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope.interceptor';
+import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
+import { PrismaModule } from './infrastructure/database/prisma.module';
+import { HealthModule } from './modules/health/health.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    PrismaModule,
+    HealthModule,
+  ],
+  providers: [
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
+    { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
+    { provide: APP_PIPE, useFactory: createValidationPipe },
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*path');
+  }
+}
