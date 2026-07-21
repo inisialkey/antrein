@@ -1779,7 +1779,7 @@ Response `201`:
   "data": {
     "id": "biz_01J...",
     "name": "AntreIn Barbershop",
-    "status": "pending_verification",
+    "status": "active",
     "ownerUserId": "usr_01J...",
     "primaryOutlet": {
       "id": "out_01J...",

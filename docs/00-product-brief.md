@@ -1802,6 +1802,16 @@ The MVP is complete when:
 
 ## 34. Open Product Decisions
 
+> **Resolution status (2026-07-21):** the following items are resolved in `docs/adr/`:
+> payment gateway → Midtrans (ADR 0016) · push provider → OneSignal (ADR 0020) ·
+> self-check-in → both customer and staff (ADR 0014) · deposits → fixed only (ADR 0017) ·
+> default cancellation policy → adopted example values (ADR 0018) · walk-in in first demo → yes,
+> queue reorder → yes, any-available staff → no (ADR 0019) · shared customer/business account → yes
+> (ADR 0012) · business registration approval → self-serve auto-active (ADR 0013) ·
+> booking confirmation → automatic (ADR 0015) · payment fees → absorbed by business (ADR 0021).
+> Still open: product name/brand, waiting-time estimation refinement (documented formula stands
+> initially), data-retention periods, demo hosting environment.
+
 The following decisions must be resolved before dependent implementation begins:
 
 - Final product name and brand identity.
@@ -1896,6 +1906,9 @@ Business-rule changes must update the appropriate product or domain document bef
 | Idempotency | Repeated processing produces the same business result |
 | Audit Log | Append-only record of sensitive changes |
 | Real-Time Event | Event delivered to active clients immediately after state changes |
+| Check-in Window | Configurable time range around the appointment during which check-in is allowed |
+| Customer Mode | Navigation shell showing customer journeys; every account has it |
+| Business Mode | Navigation shell for owners and staff; available only with an active business membership |
 
 ---
 

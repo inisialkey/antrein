@@ -90,13 +90,15 @@ When these bite, trust the detail doc and record the resolution:
 
 - Schedule table names: `database-design.md` (`outlet_operating_hours`, `staff_schedules`, `staff_schedule_breaks`) supersedes the architecture doc's `operating_hours`/`schedule_breaks`.
 - Flutter folder/feature layout: `frontend/app-architecture.md` §3 supersedes architecture doc §12.
-- WS event envelope: architecture doc uses flat `resourceId`; `realtime-queue.md` uses nested `resource: {type, id}`. Unresolved — pick one and record it.
+- WS event envelope: RESOLVED (ADR 0023) — nested `resource: {type, id}` + `eventId` per `realtime-queue.md`; architecture doc §30's flat `resourceId` is stale.
 - Queue command safety: architecture doc says `Idempotency-Key`; `realtime-queue.md` uses `expectedVersion` optimistic concurrency (keys only for check-in/recall) → `QUEUE_VERSION_CONFLICT` on stale version. Follow realtime-queue; decide per command.
 - Session-state enums and provider-port method signatures differ slightly across docs — resolve in an ADR when implementing.
 
 ## Open Decisions
 
-Nearly every doc ends with an "Open Decisions" section (product brief §34, api-contract §146, and each backend/frontend doc). Payment gateway, push provider, token TTLs, ID column type, deposit rounding, booking-overlap strategy, self-check-in vs staff-only, and more are undecided — do not treat example values in the docs as ratified. Record decisions as ADRs in `docs/adr/` (directory doesn't exist yet; intended initial ADR list is in architecture doc §71).
+Most former open decisions are now ratified in `docs/adr/` (0009–0023): npm/Node 22, prefixed-ULID text IDs, token TTLs 15m/30d, shared multi-role account, self-serve auto-active businesses, check-in by customer AND staff, automatic booking confirmation, Midtrans sandbox, fixed-only deposits, default cancellation policy (360/120/50%/0%), demo scope (walk-ins + queue reorder in, any-available staff out), OneSignal, fees absorbed by business, public unauthenticated discovery, nested WS envelope. Product brief §34 carries the resolution index. ADRs 0001–0008 stay reserved for the architecture-doc decisions (arch §71).
+
+Still open — decide (new ADR) when the depending milestone starts: booking-overlap strategy (exclusion constraint vs reservations table, M5), deposit-percentage rounding (only if percentage deposits return), queue command idempotency-vs-`expectedVersion` per command (M7), WS namespace layout (M7), payment refresh sync-vs-async (M6), whether the generated Dart client is committed, file-size/rate limits, one-user-multiple-businesses, data retention, demo hosting. Do not treat remaining example values as ratified.
 
 ## Implementation Order
 
