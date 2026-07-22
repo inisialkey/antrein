@@ -2305,7 +2305,7 @@ Errors:
 - `STAFF_NOT_FOUND`
 - `FORBIDDEN_BUSINESS_RESOURCE`
 
-The API may allow deactivation while preserving already confirmed future bookings only if explicit product policy is later defined.
+Policy (ADR 0036): deactivation is blocked while the staff member has future bookings in blocking statuses — `409 STAFF_HAS_ACTIVE_BOOKINGS` with the blocking booking ids in `error.details`. Resolve those bookings first.
 
 ---
 

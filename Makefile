@@ -6,11 +6,11 @@ TEST_DATABASE_URL = postgresql://postgres:postgres@localhost:5432/antrein_test
 bootstrap:
 	cd $(API_DIR) && npm install
 	test -f $(API_DIR)/.env || cp .env.example $(API_DIR)/.env
-	docker compose up -d --wait postgres redis minio
+	docker compose up -d --wait postgres redis minio mailpit
 	cd $(API_DIR) && npx prisma migrate deploy && npx prisma generate
 
 dev:
-	docker compose up -d --wait postgres redis minio
+	docker compose up -d --wait postgres redis minio mailpit
 	cd $(API_DIR) && npm run start:dev
 
 test:

@@ -102,6 +102,8 @@ Architecture grilling (ADRs 0024–0033) added: new-row session rotation with fa
 
 Contract defaults ratified in ADR 0034 (values normative in `docs/02-api-contract.md`): password 8–128 length-only, auth rate limits, geo discovery params reserved/ignored in v1, file limits 5 MB + 10 gallery, booking policy 60 min/30 d/3 active, check-in window −30/+15 min, idempotency retention 24 h/7 d.
 
+Backend-brief grilling (ADRs 0035–0037): worker inline locally (`WORKER_MODE=inline`) / separate container staging+prod; Redis optional in all MVP environments (in-memory rate limits, mandatory only at >1 instance); staff deactivation blocked by future active bookings (`STAFF_HAS_ACTIVE_BOOKINGS` + ids in details); password-reset email via `EmailPort` → Mailpit locally (compose service, UI :8025), real ESP deferred with demo hosting.
+
 Still open — decide (new ADR) when relevant: deposit-percentage rounding (only if percentage deposits return), data retention, demo hosting, product name. Do not treat remaining example values as ratified.
 
 ## Implementation Order

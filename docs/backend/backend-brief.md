@@ -2623,7 +2623,13 @@ Required before public production:
 
 ## 114. Open Backend Decisions
 
-Resolve before dependent implementation:
+> **Resolution status (2026-07-22):** all items below are resolved in `docs/adr/` —
+> provider 0016 · push 0020 · TTLs 0011 · ID format 0010 · overlap strategy 0027 ·
+> queue counter: atomic upsert per `database-design.md` §37 · worker process 0035 ·
+> Redis optional 0035 · file limits + rate limits + expiration + idempotency retention
+> 0033/0034 · completion balance 0032 · self-check-in 0014 · verification/discovery 0013 ·
+> staff deactivation 0036 · OpenAPI artifact committed (in repo since M1, Dart client 0031).
+> Password-reset delivery: 0037. List retained for historical context.
 
 - Final payment provider.
 - Final push provider.
