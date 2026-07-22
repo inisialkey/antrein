@@ -283,17 +283,14 @@ Do not apply destructive normalization beyond clearly supported behavior.
 
 ### 9.1 Minimum Requirements
 
-Recommended MVP password policy:
+Ratified MVP password policy (ADR 0034):
 
 - Minimum 8 characters.
 - Maximum 128 characters.
-- At least one letter.
-- At least one number.
-- Symbols recommended but not mandatory.
-- Unicode accepted only if handling is consistent.
-- Leading and trailing spaces are preserved or rejected consistently.
+- Length-only — no composition rules (no required letter/number/symbol classes).
+- Unicode accepted; leading and trailing whitespace rejected.
 
-A stronger minimum of 10–12 characters may be adopted later.
+Argon2id (ADR 0039: 64 MiB / t=3 / p=4, rehash-on-login) plus rate limiting carry the security load. A stronger minimum may be adopted later.
 
 ### 9.2 Password Validation
 
@@ -1157,6 +1154,10 @@ Business memberships are not permanently embedded into this object unless loaded
 
 ## 34. Rate Limiting
 
+> Ratified values live in ADR 0034 (login 5/min/IP+email · register 3/min/IP ·
+> forgot 3/15min/IP+email · reset 5/min/IP, env-configurable). The examples below
+> are illustrative structure only.
+
 Recommended rate-limit categories:
 
 ### Registration
@@ -1957,7 +1958,12 @@ Minimum response capabilities:
 
 ## 72. Open Decisions
 
-The following must be resolved before dependent implementation:
+> **Resolution status (2026-07-22):** all items resolved — password length + rate values
+> 0034 · Argon2id params, refresh representation, strict reuse, email verification (out),
+> suspension window, logout push deactivation, reset-token policy 0039 · TTLs 0011 ·
+> signing HS256 0025 · rotation new-row 0024 · session listing + login alerts out of MVP,
+> device-metadata log-only, token bundle serialized (0039 context) · security-event
+> retention deferred with global retention review. List retained for history.
 
 - Final password minimum length.
 - Final Argon2id parameters.

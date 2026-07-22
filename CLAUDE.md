@@ -106,6 +106,8 @@ Backend-brief grilling (ADRs 0035–0037): worker inline locally (`WORKER_MODE=i
 
 Database grilling (ADR 0038): queue ordering `sort_order integer`; booking codes per-business daily sequence (`booking_code_counters` atomic upsert); one-active-outlet partial unique applied; rating aggregates stored + updated in review transaction; webhook payloads redacted-at-write (no encryption); outbox `processed` deleted after 30 d; permissions jsonb; RLS formally rejected.
 
+Auth grilling (ADR 0039): Argon2id 64 MiB/t=3/p=4 pinned + rehash-on-login; refresh token = `sessionId.randomSecret`; strict reuse detection (family → compromised); email verification OUT of MVP; suspension accepts ≤15-min residual JWT window; logout deactivates device push; reset tokens 30 min single-use, completion revokes all sessions. Auth doc §9.1 composition rules corrected to length-only per ADR 0034.
+
 Still open — decide (new ADR) when relevant: deposit-percentage rounding (only if percentage deposits return), data retention, demo hosting, product name. Do not treat remaining example values as ratified.
 
 ## Implementation Order
