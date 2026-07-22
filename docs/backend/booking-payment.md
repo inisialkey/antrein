@@ -2877,7 +2877,12 @@ Required:
 
 ## 102. Open Decisions
 
-The following decisions must be resolved before dependent implementation:
+> **Resolution status (2026-07-22):** all items resolved — overlap/reservations 0027 ·
+> any_available out 0019 · rounding dormant 0017 · provider 0016 · expiration 0033 ·
+> one-pending-payment, provider-retry, late-payment, business-cancel, PAL methods,
+> job cadence 0040 · completion balance 0032 · thresholds + no-show 0018 · payload
+> retention + booking codes 0038 · rescheduling excluded (brief §14.4) · verification
+> gating moot (0013). List retained for history.
 
 - Booking overlap strategy.
 - Reservation-table use.
