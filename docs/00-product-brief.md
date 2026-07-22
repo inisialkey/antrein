@@ -855,7 +855,7 @@ Customer notification events:
 - Booking cancelled.
 - Appointment reminder.
 - Check-in successful.
-- Queue nearly reached.
+- Queue nearly reached. *(deferred to post-MVP — ADR 0041)*
 - Customer called.
 - Service completed.
 - Refund updated.

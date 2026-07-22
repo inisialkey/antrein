@@ -1954,7 +1954,12 @@ The application writes outbox events instead of calling this port directly insid
 
 ## 77. Open Decisions
 
-The following must be resolved before dependent implementation:
+> **Resolution status (2026-07-22):** all items resolved — called scope (per outlet),
+> in-service-per-staff (enforced), skip-return (end of queue), priority (check-in order),
+> wait estimate (peopleAhead × outlet average), near-turn (deferred), snapshot PII
+> (no phone), prefix/gaps/daily-reset/aggregate-version/backoff/dedup defaults — ADR 0041 ·
+> reorder 0019 · self-check-in 0014 · window 0034 · namespace 0030 · Redis 0035 ·
+> expectedVersion 0028. List retained for history.
 
 - One called entry per outlet or per staff.
 - One in-service entry per staff enforcement.

@@ -110,6 +110,10 @@ Auth grilling (ADR 0039): Argon2id 64 MiB/t=3/p=4 pinned + rehash-on-login; refr
 
 Booking/payment grilling (ADR 0040): one pending online payment per booking (partial unique index); provider-creation failure → customer-driven idempotent retry, no worker retry, reservation held to 30-min expiry; late payment confirms only if reservation row still exists, else manual_review + refund; business cancellation = full refund + reason + audit (`booking.manage`); all five pay-at-location method labels; job cadence 60 s expiration / 5 min reconciliation / daily consistency.
 
+Queue grilling (ADR 0041): one called entry per outlet+date and one in-service per staff (both partial unique indexes); skipped entries return to END of queue; pure check-in order (audited reorder only override); wait estimate = peopleAhead × outlet average; near-turn push deferred; no phone numbers in staff queue snapshot; display `A012` (prefix + 3-digit pad); gaps acceptable; aggregate version in `queue_counters.version`.
+
+**All eight docs' open-decision lists are fully resolved (ADRs 0009–0041). No decision blocks any milestone.**
+
 Still open — decide (new ADR) when relevant: deposit-percentage rounding (only if percentage deposits return), data retention, demo hosting, product name. Do not treat remaining example values as ratified.
 
 ## Implementation Order
