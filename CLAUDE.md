@@ -100,7 +100,9 @@ Most former open decisions are now ratified in `docs/adr/` (0009–0023): npm/No
 
 Architecture grilling (ADRs 0024–0033) added: new-row session rotation with family revocation, HS256 symmetric JWT, one owned business per user (`BUSINESS_LIMIT_REACHED`), booking overlap via `booking_reservations` exclusion-constraint table, queue `expectedVersion` model, synchronous payment refresh through the webhook transition path, single `/realtime` namespace with Redis adapter deferred, committed Dart client, service completion independent of balance, 30-minute payment expiration.
 
-Still open — decide (new ADR) when the depending milestone starts: deposit-percentage rounding (only if percentage deposits return), exact file-size/rate limits, idempotency retention, data retention, demo hosting, product name. Do not treat remaining example values as ratified.
+Contract defaults ratified in ADR 0034 (values normative in `docs/02-api-contract.md`): password 8–128 length-only, auth rate limits, geo discovery params reserved/ignored in v1, file limits 5 MB + 10 gallery, booking policy 60 min/30 d/3 active, check-in window −30/+15 min, idempotency retention 24 h/7 d.
+
+Still open — decide (new ADR) when relevant: deposit-percentage rounding (only if percentage deposits return), data retention, demo hosting, product name. Do not treat remaining example values as ratified.
 
 ## Implementation Order
 

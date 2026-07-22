@@ -681,13 +681,14 @@ Concurrent requests with same key:
 
 Idempotency records are retained for an endpoint-specific period.
 
-Minimum recommended MVP retention:
+MVP retention (ADR 0034):
 
 ```text
-24 hours
+24 hours — general mutations (booking create, check-in, business/service management)
+7 days   — payment actions (create payment, refund request, pay-at-location confirmation)
 ```
 
-Payment and webhook idempotency records may be retained longer.
+Webhook dedupe records (`payment_events`, unique per provider event ID) are permanent business records, outside this cleanup.
 
 ### 23.4 Request Fingerprint
 
@@ -757,7 +758,7 @@ Validation:
 - `name`: required, 2–100 characters.
 - `email`: valid and unique.
 - `phoneNumber`: optional in early MVP, valid when provided.
-- `password`: minimum security requirements.
+- `password`: 8–128 characters, length-only (no composition rules) — ADR 0034.
 
 Response `201`:
 
@@ -1294,6 +1295,8 @@ staff_avatar
 service_image
 ```
 
+Limits (ADR 0034): max 5 MB per file; JPEG, PNG, WebP only; max 10 `business_gallery` images per business.
+
 Response `201`:
 
 ```json
@@ -1381,6 +1384,9 @@ sort
 cursor
 limit
 ```
+
+> `latitude`, `longitude`, `radiusKm` are **reserved** in v1: accepted but not evaluated
+> (map/distance discovery is post-MVP). Sending them is not an error — ADR 0034.
 
 MVP supported sort values:
 
@@ -1834,7 +1840,10 @@ Response includes management-only fields:
     "bookingPolicy": {
       "minimumLeadMinutes": 60,
       "maximumAdvanceDays": 30,
-      "automaticConfirmation": true
+      "automaticConfirmation": true,
+      "maxActiveBookingsPerCustomer": 3,
+      "checkInEarlyMinutes": 30,
+      "checkInLateMinutes": 15
     },
     "depositPolicy": {
       "enabled": true,
@@ -5392,6 +5401,14 @@ The exact cache policy is an implementation concern but must not expose private 
 # Part XXVI — Open Contract Decisions
 
 ## 146. Decisions Required Before Implementation
+
+> **Resolution status (2026-07-22):** every item below is resolved in `docs/adr/` —
+> gateway 0016 · push 0020 · token TTLs 0011 · discovery auth 0022 · ID format 0010 ·
+> Dart client committed 0031 · search filters + file limits + rate limits + idempotency
+> retention 0034 · self-check-in 0014 · queue reordering 0019 · completion balance 0032 ·
+> payment expiration 0033 · multiple businesses 0026 · verification/discovery 0013 ·
+> any_available 0019 (out) · payment refresh 0029 · WS namespaces 0030.
+> The list is retained for historical context.
 
 - Final payment gateway.
 - Final push provider.
