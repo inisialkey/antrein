@@ -104,6 +104,8 @@ Contract defaults ratified in ADR 0034 (values normative in `docs/02-api-contrac
 
 Backend-brief grilling (ADRs 0035–0037): worker inline locally (`WORKER_MODE=inline`) / separate container staging+prod; Redis optional in all MVP environments (in-memory rate limits, mandatory only at >1 instance); staff deactivation blocked by future active bookings (`STAFF_HAS_ACTIVE_BOOKINGS` + ids in details); password-reset email via `EmailPort` → Mailpit locally (compose service, UI :8025), real ESP deferred with demo hosting.
 
+Database grilling (ADR 0038): queue ordering `sort_order integer`; booking codes per-business daily sequence (`booking_code_counters` atomic upsert); one-active-outlet partial unique applied; rating aggregates stored + updated in review transaction; webhook payloads redacted-at-write (no encryption); outbox `processed` deleted after 30 d; permissions jsonb; RLS formally rejected.
+
 Still open — decide (new ADR) when relevant: deposit-percentage rounding (only if percentage deposits return), data retention, demo hosting, product name. Do not treat remaining example values as ratified.
 
 ## Implementation Order

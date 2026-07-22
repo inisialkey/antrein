@@ -3149,6 +3149,13 @@ Critical queries:
 
 ## 81. Decisions Required Before Implementation
 
+> **Resolution status (2026-07-22):** all items resolved — ID type 0010 · overlap +
+> reservations table 0027 · queue position (integer), booking codes (per-business daily
+> sequence), one-active-outlet (applied), rating aggregates (stored), payload redaction
+> (redact-at-write, no encryption), outbox archival (delete processed after 30 d),
+> permissions jsonb, RLS rejected, manual SQL in migrations, pg_trgm in 015 — all ADR 0038 ·
+> retention periods remain deferred to production policy review. List retained for history.
+
 - Exact ID storage type: `text`, `uuid`, or generated ULID string.
 - Final booking overlap implementation.
 - Whether to use exclusion constraints directly on `bookings`.
