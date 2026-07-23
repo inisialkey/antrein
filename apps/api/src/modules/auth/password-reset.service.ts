@@ -107,8 +107,9 @@ export class PasswordResetService {
 
     const claimed = await this.prisma.$transaction(async (tx) => {
       // Single-use claim: exactly one concurrent reset can win this update.
+      // Expiry re-checked here so the pre-check above can't go stale mid-request.
       const claim = await tx.passwordResetToken.updateMany({
-        where: { id: record.id, usedAt: null },
+        where: { id: record.id, usedAt: null, expiresAt: { gt: new Date() } },
         data: { usedAt: new Date() },
       });
       if (claim.count === 0) return false;
