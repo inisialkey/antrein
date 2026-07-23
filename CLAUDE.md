@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository State
 
-Backend foundation (M1) is scaffolded and green: `apps/api` runs NestJS 11 with health endpoints, response/error envelopes, env validation, Prisma 7 + PostgreSQL, and migrations 001–003 (users, auth sessions, password reset tokens, devices, notification preferences). `apps/mobile` and `infrastructure/` are still empty. Next milestone: M2 authentication (`docs/backend/authentication.md`). CI workflows skip themselves until the relevant app manifest exists (`apps/mobile/pubspec.yaml` still pending).
+M1 foundation and M2 authentication are implemented and green. `apps/api` runs NestJS 11 with health endpoints, envelopes, env validation, Prisma 7 + PostgreSQL (migrations 001–003), and the full auth slice: Argon2id hasher, HS256 access JWT + opaque rotating refresh (`sessionId.secret`, new-row rotation, strict reuse detection per ADR 0024/0039), global `AuthGuard` + `@Public()`, in-memory rate limits (ADR 0034 values), `EmailPort` → SMTP/Mailpit, endpoints register/login/refresh/logout/password-forgot/password-reset/`GET /me`. Branching is gitflow: `main` (releases) ← `develop` ← `feature/*`. `apps/mobile` and `infrastructure/` are still empty; next milestone: M3 Flutter bootstrap or M4 business modules. CI workflows skip themselves until the relevant app manifest exists (`apps/mobile/pubspec.yaml` still pending).
 
 ## What This Is
 
@@ -31,7 +31,7 @@ Node 22 (`.nvmrc` — run `nvm use` first; Prisma 7 requires ≥22.12) and npm (
 - `make test` / `make test-integration` — unit tests / integration tests (creates + migrates `antrein_test` DB, needs Docker up)
 - `make migrate` / `make seed` — `prisma migrate deploy` / seed script
 
-From `apps/api` directly: `npm run test -- --testPathPattern id.spec` for a single test file, `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build`, `npm run openapi:generate` (writes `packages/api-contracts/openapi/antrein-v1.json`).
+From `apps/api` directly: `npm run test -- id.spec` for a single test file (Jest 30 — positional pattern, `--testPathPattern` was removed), `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build`, `npm run openapi:generate` (writes `packages/api-contracts/openapi/antrein-v1.json`).
 
 Prisma 7 specifics: no `url` in `schema.prisma` — the connection comes from `prisma.config.ts` (loads dotenv) for CLI and from `@prisma/adapter-pg` in `PrismaService` at runtime. Generated client lives at `src/generated/prisma/` (gitignored) — run `npx prisma generate` after schema changes and before typecheck. Migrations are hand-written SQL under `prisma/migrations/` following the numbered sequence in `database-design.md` §82.
 

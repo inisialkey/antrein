@@ -2,9 +2,11 @@ import { Controller, Get, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Response } from 'express';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { Public } from '../auth/public.decorator';
 
 type CheckState = 'up' | 'down';
 
+@Public()
 @ApiExcludeController()
 @Controller('health')
 export class HealthController {

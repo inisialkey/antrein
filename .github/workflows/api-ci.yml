@@ -54,6 +54,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://antrein:antrein@localhost:5432/antrein_test
+      JWT_ACCESS_SECRET: ci-only-jwt-secret-not-used-anywhere-real
     steps:
       - uses: actions/checkout@v4
 

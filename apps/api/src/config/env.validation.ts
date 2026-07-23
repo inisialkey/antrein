@@ -1,5 +1,14 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, IsUrl, Min, validateSync } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Min,
+  MinLength,
+  validateSync,
+} from 'class-validator';
 
 export enum NodeEnv {
   Development = 'development',
@@ -30,9 +39,48 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   REFRESH_TOKEN_TTL_DAYS = 30;
+
+  @IsString()
+  @MinLength(32)
+  JWT_ACCESS_SECRET!: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_ISSUER?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_AUDIENCE?: string;
+
+  @IsInt()
+  @Min(5)
+  RESET_TOKEN_TTL_MINUTES = 30;
+
+  @IsOptional()
+  @IsString()
+  SMTP_HOST?: string;
+
+  @IsInt()
+  @Min(1)
+  SMTP_PORT = 1025;
+
+  @IsOptional()
+  @IsString()
+  EMAIL_FROM?: string;
+
+  /** 'true' disables in-memory auth rate limits — integration tests only. */
+  @IsOptional()
+  @IsString()
+  AUTH_RATE_LIMIT_DISABLED?: string;
 }
 
-const NUMERIC_KEYS = ['PORT', 'ACCESS_TOKEN_TTL_MINUTES', 'REFRESH_TOKEN_TTL_DAYS'] as const;
+const NUMERIC_KEYS = [
+  'PORT',
+  'ACCESS_TOKEN_TTL_MINUTES',
+  'REFRESH_TOKEN_TTL_DAYS',
+  'RESET_TOKEN_TTL_MINUTES',
+  'SMTP_PORT',
+] as const;
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
   // Env values arrive as strings; coerce numerics explicitly instead of relying
