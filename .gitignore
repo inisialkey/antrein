@@ -5,7 +5,10 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
-!.env.example
+
+# Local agent tooling (not part of the project)
+.agents/
+.claude/
 
 # Node (apps/api)
 node_modules/
