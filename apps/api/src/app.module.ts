@@ -7,13 +7,17 @@ import { createValidationPipe } from './common/errors/validation.pipe-factory';
 import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope.interceptor';
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     PrismaModule,
     HealthModule,
+    AuthModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
