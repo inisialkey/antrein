@@ -2,7 +2,7 @@ name: Mobile CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "apps/mobile/**"
       - "packages/api-contracts/**"
@@ -15,7 +15,7 @@ on:
 
 jobs:
   scaffold-check:
-    # Repo is pre-implementation; skip CI cleanly until apps/mobile is scaffolded.
+    # Skips CI cleanly until apps/mobile is scaffolded (now present since M3).
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.check.outputs.exists }}
@@ -41,12 +41,16 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          # Flutter version is an open decision (see CLAUDE.md); pin via ADR.
+          # Pinned per ADR 0042.
+          flutter-version: 3.44.4
           channel: stable
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
 
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
@@ -56,6 +60,15 @@ jobs:
 
       - name: Analyze
         run: flutter analyze
+
+      - name: Layer boundaries (domain stays pure Dart)
+        # Fallback for the deferred import_lint plugin (ADR 0042): the domain
+        # layer must not import Flutter, Dio, or a feature's data/presentation.
+        run: |
+          bad=$(grep -rElP "import 'package:(flutter|dio)/|package:antrein/features/[a-z_]+/(data|presentation)/" lib/features --include='*.dart' | grep '/domain/' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::domain layer imports a forbidden dependency:"; echo "$bad"; exit 1
+          fi
 
       - name: Tests
         run: flutter test

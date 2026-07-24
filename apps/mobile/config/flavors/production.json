@@ -1,0 +1,5 @@
+{
+  "FLAVOR": "production",
+  "API_BASE_URL": "https://api.antrein.example/api/v1",
+  "APP_NAME": "AntreIn"
+}

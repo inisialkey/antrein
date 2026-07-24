@@ -1,0 +1,52 @@
+{
+  "@@locale": "id",
+
+  "signIn": "Masuk",
+  "signInSubtitle": "Pesan tempatmu, lewati antrean",
+
+  "email": "Email",
+  "emailRequired": "Email wajib diisi",
+  "emailInvalid": "Masukkan email yang valid",
+
+  "password": "Kata sandi",
+  "passwordRequired": "Kata sandi wajib diisi",
+  "passwordTooShort": "Kata sandi minimal 8 karakter",
+
+  "forgotPassword": "Lupa kata sandi?",
+  "dontHaveAccount": "Belum punya akun? Daftar",
+
+  "createAccount": "Buat Akun",
+  "createAccountSubtitle": "Gabung AntreIn dalam sekejap",
+  "name": "Nama lengkap",
+  "nameRequired": "Nama wajib diisi",
+  "phoneNumberOptional": "Nomor telepon (opsional)",
+  "alreadyHaveAccount": "Sudah punya akun? Masuk",
+
+  "forgotPasswordTitle": "Lupa Kata Sandi",
+  "forgotPasswordSubtitle": "Masukkan email Anda dan kami akan mengirim tautan reset",
+  "sendResetLink": "Kirim Tautan Reset",
+  "passwordResetEmailSent": "Jika email terdaftar, tautan reset sedang dikirim.",
+  "enterResetToken": "Saya punya kode reset",
+
+  "resetPasswordTitle": "Atur Ulang Kata Sandi",
+  "resetPasswordSubtitle": "Masukkan kode dari email Anda dan kata sandi baru",
+  "resetToken": "Kode reset",
+  "tokenRequired": "Kode reset wajib diisi",
+  "newPassword": "Kata sandi baru",
+  "resetPasswordAction": "Atur Ulang Kata Sandi",
+  "passwordResetSuccess": "Kata sandi Anda telah diatur ulang. Silakan masuk.",
+  "backToSignIn": "Kembali ke Masuk",
+
+  "tabHome": "Beranda",
+  "tabBookings": "Pesanan",
+  "tabNotifications": "Notifikasi",
+  "tabProfile": "Profil",
+
+  "homeWelcome": "Hai, {name}!",
+  "homeDiscoverySoon": "Segera jelajahi dan pesan barbershop di sini.",
+  "comingSoon": "Segera hadir",
+  "signOut": "Keluar",
+
+  "businessAreaTitle": "Bisnis",
+  "businessAreaSoon": "Dasbor bisnis Anda hadir di pembaruan berikutnya."
+}
