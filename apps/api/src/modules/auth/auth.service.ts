@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { newId } from '../../common/id/id';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma, User } from '../../generated/prisma/client';
+import { MembershipsService } from '../memberships/memberships.service';
 import { toUserResponse, UserResponse } from '../users/user.mapper';
 import {
   accountInactive,
@@ -61,6 +62,7 @@ export class AuthService {
     private readonly hasher: PasswordHasher,
     private readonly tokens: TokenService,
     private readonly rateLimit: RateLimitService,
+    private readonly memberships: MembershipsService,
   ) {}
 
   async register(
@@ -102,7 +104,7 @@ export class AuthService {
       });
 
       this.logger.log(`auth.registration_succeeded user=${userId}`);
-      return { user: toUserResponse(user), session };
+      return { user: toUserResponse(user, []), session };
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') throw emailAlreadyRegistered();
       throw error;
@@ -143,7 +145,7 @@ export class AuthService {
     });
 
     this.logger.log(`auth.login_succeeded user=${user.id}`);
-    return { user: toUserResponse(user), session };
+    return { user: toUserResponse(user, await this.memberships.listForUser(user.id)), session };
   }
 
   async refresh(dto: RefreshDto, ctx: RequestContext): Promise<SessionTokens> {

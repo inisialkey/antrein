@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer';
-import { EmailPort, PasswordChangedEmailInput, PasswordResetEmailInput } from './email.port';
+import {
+  EmailPort,
+  PasswordChangedEmailInput,
+  PasswordResetEmailInput,
+  StaffInvitationEmailInput,
+} from './email.port';
 
 @Injectable()
 export class SmtpEmailService extends EmailPort {
@@ -40,6 +45,20 @@ export class SmtpEmailService extends EmailPort {
         `Halo ${input.name},\n\n` +
         `Password akun AntreIn Anda baru saja diubah dan semua sesi login telah diakhiri. ` +
         `Jika ini bukan Anda, segera atur ulang password Anda.`,
+    });
+  }
+
+  async sendStaffInvitation(input: StaffInvitationEmailInput): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from,
+      to: input.to,
+      subject: `Undangan bergabung dengan ${input.businessName} di AntreIn`,
+      text:
+        `Halo ${input.displayName},\n\n` +
+        `Anda diundang untuk bergabung dengan ${input.businessName} sebagai staf di AntreIn.\n\n` +
+        `Masuk atau daftar dengan email ini, lalu terima undangan dengan ID berikut di aplikasi:\n\n` +
+        `${input.invitationId}\n\n` +
+        `Undangan berlaku sampai ${input.expiresAt.toISOString()}.`,
     });
   }
 }
