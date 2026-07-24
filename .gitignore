@@ -9,6 +9,7 @@ Thumbs.db
 # Local agent tooling (not part of the project)
 .agents/
 .claude/
+graphify-out/
 
 # Node (apps/api)
 node_modules/
