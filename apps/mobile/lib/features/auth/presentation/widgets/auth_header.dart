@@ -15,13 +15,25 @@ class AuthHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Icon(
-        Icons.content_cut,
-        size: Dimens.iconXl.r,
-        color: context.colorScheme.primary,
+      Container(
+        padding: EdgeInsets.all(Dimens.space16.r),
+        decoration: BoxDecoration(
+          color: context.colorScheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(Dimens.radiusLg.r),
+        ),
+        child: Icon(
+          Icons.content_cut,
+          size: Dimens.iconLg.r,
+          color: context.colorScheme.primary,
+        ),
       ),
-      const Gap(Dimens.space8),
-      Text('AntreIn', style: context.textTheme.headlineMedium),
+      const Gap(Dimens.space16),
+      Text(
+        'AntreIn',
+        style: context.textTheme.headlineMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
       if (subtitle != null) ...[
         const Gap(Dimens.space4),
         Text(

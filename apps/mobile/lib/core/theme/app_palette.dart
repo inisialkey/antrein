@@ -16,16 +16,18 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color warning;
   final Color info;
 
+  // Aligned to the brand system: available/confirm green, amber warning, sky
+  // info (ui-ux-pro-max Booking & Appointment palette).
   static const AppPalette light = AppPalette(
-    success: Color(0xFF2E7D32),
-    warning: Color(0xFFED6C02),
-    info: Color(0xFF0288D1),
+    success: Color(0xFF059669), // emerald-600
+    warning: Color(0xFFF59E0B), // amber-500
+    info: Color(0xFF0EA5E9), // sky-500
   );
 
   static const AppPalette dark = AppPalette(
-    success: Color(0xFF66BB6A),
-    warning: Color(0xFFFFB74D),
-    info: Color(0xFF4FC3F7),
+    success: Color(0xFF34D399), // emerald-400
+    warning: Color(0xFFFBBF24), // amber-400
+    info: Color(0xFF38BDF8), // sky-400
   );
 
   @override

@@ -40,6 +40,9 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_cache_manager: ^3.4.1
   intl: ^0.20.2
+  # Typography — Figtree (display) + Noto Sans (body), the ui-ux-pro-max pairing.
+  # ponytail: runtime-fetched + cached; bundle the TTFs for offline in hardening.
+  google_fonts: ^6.2.1
   # Native splash held through async bootstrap; preserve()/remove() at runtime.
   flutter_native_splash: ^2.4.0
 
