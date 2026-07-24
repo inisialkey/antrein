@@ -1,0 +1,24 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+# Layer-boundary enforcement (presentation → domain ← data; domain is pure Dart)
+# is checked by a grep gate in Mobile CI. The `import_lint` analyzer plugin from
+# the boilerplate is deferred (ponytail: add back when the feature set grows).
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.config.dart"
+    - "lib/l10n/gen/**"
+
+linter:
+  rules:
+    public_member_api_docs: false
+    lines_longer_than_80_chars: false
+    # Clean-Architecture ports are deliberately single-method interfaces.
+    one_member_abstracts: false
+    # freezed requires the private `_()` constructor before the factory.
+    sort_unnamed_constructors_first: false
+    sort_pub_dependencies: false
