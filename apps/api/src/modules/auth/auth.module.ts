@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { EmailPort } from '../../infrastructure/email/email.port';
-import { SmtpEmailService } from '../../infrastructure/email/smtp-email.service';
+import { EmailModule } from '../../infrastructure/email/email.module';
+import { MembershipsModule } from '../memberships/memberships.module';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
@@ -12,6 +12,7 @@ import { RateLimitService } from './rate-limit.service';
 import { TokenService } from './token.service';
 
 @Module({
+  imports: [MembershipsModule, EmailModule],
   controllers: [AuthController],
   providers: [
     PasswordHasher,
@@ -19,7 +20,6 @@ import { TokenService } from './token.service';
     PasswordResetService,
     { provide: TokenService, useFactory: TokenService.fromConfig, inject: [ConfigService] },
     { provide: RateLimitService, useFactory: RateLimitService.fromConfig, inject: [ConfigService] },
-    { provide: EmailPort, useClass: SmtpEmailService },
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
   exports: [TokenService],

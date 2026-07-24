@@ -8,7 +8,11 @@ import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
+import { OutletsModule } from './modules/outlets/outlets.module';
+import { ServicesModule } from './modules/services/services.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -18,6 +22,10 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    BusinessesModule,
+    OutletsModule,
+    ServicesModule,
+    StaffModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

@@ -27,6 +27,10 @@ model User {
   passwordResetTokens    PasswordResetToken[]
   devices                Device[]
   notificationPreference UserNotificationPreference?
+  ownedBusinesses        Business[]
+  memberships            BusinessMembership[]
+  sentInvitations        StaffInvitation[] @relation("InvitedBy")
+  acceptedInvitations    StaffInvitation[] @relation("AcceptedBy")
 
   @@map("users")
 }
@@ -104,4 +108,240 @@ model UserNotificationPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_notification_preferences")
+}
+
+model Business {
+  id            String    @id
+  ownerUserId   String    @map("owner_user_id")
+  name          String
+  slug          String    @unique(map: "businesses_slug_uq")
+  description   String?
+  logoFileId    String?   @map("logo_file_id")
+  status        String    @default("pending_verification")
+  timezone      String    @default("Asia/Jakarta")
+  ratingAverage Decimal   @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount   Int       @default(0) @map("rating_count")
+  verifiedAt    DateTime? @map("verified_at") @db.Timestamptz(6)
+  suspendedAt   DateTime? @map("suspended_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner       User                @relation(fields: [ownerUserId], references: [id])
+  policy      BusinessPolicy?
+  outlets     Outlet[]
+  memberships BusinessMembership[]
+  invitations StaffInvitation[]
+  staff       StaffProfile[]
+  services    Service[]
+
+  @@index([status], map: "businesses_status_idx")
+  @@index([ownerUserId], map: "businesses_owner_idx")
+  @@map("businesses")
+}
+
+model BusinessPolicy {
+  businessId                 String   @id @map("business_id")
+  minimumLeadMinutes         Int      @default(60) @map("minimum_lead_minutes")
+  maximumAdvanceDays         Int      @default(30) @map("maximum_advance_days")
+  automaticConfirmation      Boolean  @default(true) @map("automatic_confirmation")
+  allowPayAtLocation         Boolean  @default(true) @map("allow_pay_at_location")
+  allowFullPayment           Boolean  @default(false) @map("allow_full_payment")
+  allowDeposit               Boolean  @default(false) @map("allow_deposit")
+  defaultDepositType         String   @default("none") @map("default_deposit_type")
+  defaultDepositValue        Int      @default(0) @map("default_deposit_value")
+  fullRefundBeforeMinutes    Int      @default(360) @map("full_refund_before_minutes")
+  partialRefundBeforeMinutes Int      @default(120) @map("partial_refund_before_minutes")
+  partialRefundPercentage    Int      @default(50) @map("partial_refund_percentage")
+  noShowRefundPercentage     Int      @default(0) @map("no_show_refund_percentage")
+  checkInEarlyMinutes        Int      @default(30) @map("check_in_early_minutes")
+  checkInLateMinutes         Int      @default(15) @map("check_in_late_minutes")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_policies")
+}
+
+model Outlet {
+  id               String   @id
+  businessId       String   @map("business_id")
+  name             String
+  phoneNumber      String?  @map("phone_number")
+  timezone         String   @default("Asia/Jakarta")
+  addressFormatted String   @map("address_formatted")
+  latitude         Decimal? @db.Decimal(9, 6)
+  longitude        Decimal? @db.Decimal(9, 6)
+  status           String   @default("active")
+  queuePrefix      String   @default("A") @map("queue_prefix")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffAssignments StaffOutlet[]
+
+  @@index([businessId, status], map: "outlets_business_status_idx")
+  @@map("outlets")
+}
+
+model BusinessMembership {
+  id          String    @id
+  businessId  String    @map("business_id")
+  userId      String    @map("user_id")
+  role        String
+  permissions Json      @default("[]")
+  status      String    @default("active")
+  joinedAt    DateTime? @map("joined_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffProfile StaffProfile?
+
+  @@unique([businessId, userId], map: "business_memberships_business_user_uq")
+  @@index([userId, status], map: "business_memberships_user_status_idx")
+  @@index([businessId, status], map: "business_memberships_business_status_idx")
+  @@map("business_memberships")
+}
+
+model StaffInvitation {
+  id                 String    @id
+  businessId         String    @map("business_id")
+  emailNormalized    String    @map("email_normalized")
+  displayName        String    @map("display_name")
+  role               String
+  permissions        Json      @default("[]")
+  outletIds          Json      @default("[]") @map("outlet_ids")
+  eligibleServiceIds Json      @default("[]") @map("eligible_service_ids")
+  tokenHash          String    @unique(map: "staff_invitations_token_hash_uq") @map("token_hash")
+  status             String    @default("pending")
+  invitedByUserId    String    @map("invited_by_user_id")
+  expiresAt          DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt         DateTime? @map("accepted_at") @db.Timestamptz(6)
+  acceptedByUserId   String?   @map("accepted_by_user_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invitedBy User     @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+  acceptedBy User?   @relation("AcceptedBy", fields: [acceptedByUserId], references: [id])
+
+  @@index([expiresAt], map: "staff_invitations_expires_idx")
+  @@map("staff_invitations")
+}
+
+model StaffProfile {
+  id            String   @id
+  businessId    String   @map("business_id")
+  membershipId  String   @unique @map("membership_id")
+  displayName   String   @map("display_name")
+  avatarFileId  String?  @map("avatar_file_id")
+  staffType     String   @default("barber") @map("staff_type")
+  status        String   @default("active")
+  ratingAverage Decimal  @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount   Int      @default(0) @map("rating_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  membership        BusinessMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  outletAssignments StaffOutlet[]
+  serviceLinks      StaffService[]
+
+  @@index([businessId, status], map: "staff_profiles_business_status_idx")
+  @@map("staff_profiles")
+}
+
+model StaffOutlet {
+  staffId   String   @map("staff_id")
+  outletId  String   @map("outlet_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  staff  StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  outlet Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, outletId])
+  @@map("staff_outlets")
+}
+
+model Service {
+  id              String   @id
+  businessId      String   @map("business_id")
+  name            String
+  nameNormalized  String   @map("name_normalized")
+  description     String?
+  imageFileId     String?  @map("image_file_id")
+  durationMinutes Int      @map("duration_minutes")
+  priceAmount     Int      @map("price_amount")
+  currency        String   @default("IDR")
+  depositType     String   @default("none") @map("deposit_type")
+  depositValue    Int      @default(0) @map("deposit_value")
+  status          String   @default("active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffLinks StaffService[]
+
+  @@index([businessId, status, sortOrder], map: "services_business_status_sort_idx")
+  @@map("services")
+}
+
+model StaffService {
+  staffId   String   @map("staff_id")
+  serviceId String   @map("service_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  staff   StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+  @@map("staff_services")
+}
+
+model IdempotencyKey {
+  id                 String   @id
+  scopeType          String   @map("scope_type")
+  scopeId            String   @map("scope_id")
+  action             String
+  idempotencyKey     String   @map("idempotency_key")
+  requestFingerprint String   @map("request_fingerprint")
+  status             String
+  responseStatus     Int?     @map("response_status")
+  responseBody       Json?    @map("response_body")
+  resourceType       String?  @map("resource_type")
+  resourceId         String?  @map("resource_id")
+  errorCode          String?  @map("error_code")
+  expiresAt          DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([scopeType, scopeId, action, idempotencyKey], map: "idempotency_keys_scope_action_key_uq")
+  @@index([expiresAt], map: "idempotency_keys_expiry_idx")
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id           String   @id
+  actorUserId  String?  @map("actor_user_id")
+  actorType    String   @map("actor_type")
+  actorRole    String?  @map("actor_role")
+  businessId   String?  @map("business_id")
+  outletId     String?  @map("outlet_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String   @map("resource_id")
+  beforeData   Json?    @map("before_data")
+  afterData    Json?    @map("after_data")
+  reason       String?
+  requestId    String?  @map("request_id")
+  ipAddress    String?  @map("ip_address") @db.Inet
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([resourceType, resourceId, createdAt], map: "audit_logs_resource_idx")
+  @@index([businessId, createdAt(sort: Desc)], map: "audit_logs_business_created_idx")
+  @@map("audit_logs")
 }
