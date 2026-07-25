@@ -140,8 +140,8 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
     // ponytail: 12s poll stands in for the M9 realtime queue feed; swap for the
     // WebSocket `/realtime` subscription when it lands.
     _pollTimer = Timer.periodic(const Duration(seconds: 12), (_) {
-      if (state.actingEntryId != null)
-        return; // don't fight an in-flight command
+      // don't fight an in-flight command mid-apply
+      if (state.actingEntryId != null) return;
       unawaited(refresh());
     });
   }
