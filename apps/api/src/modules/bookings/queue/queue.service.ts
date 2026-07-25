@@ -20,6 +20,7 @@ import {
 import { toCheckInQueueBlock, toCustomerQueueResource } from './queue.mapper';
 import {
   customerViewOf,
+  enqueueQueueEvent,
   insertBookingHistory,
   insertQueueHistory,
   jakartaBusinessDate,
@@ -161,7 +162,12 @@ export class QueueService {
           actorType,
           metadata: { method, source: 'check_in' },
         });
-        // ponytail: queue.entry.created outbox event lands with the realtime milestone.
+        await enqueueQueueEvent(tx, {
+          queueEntryId: entryId,
+          bookingId,
+          outletId: outlet.id,
+          businessDate,
+        });
       });
     } catch (error) {
       // Concurrent check-in loses the UNIQUE(booking_id) race.

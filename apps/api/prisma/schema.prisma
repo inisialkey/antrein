@@ -712,3 +712,24 @@ model QueueReorder {
 
   @@map("queue_reorders")
 }
+
+// Transactional outbox (database-design §49–§50). Written inside business
+// transactions; drained by the in-process dispatcher. Indexes live in the
+// migration (partial `due` index Prisma DSL can't express).
+model OutboxEvent {
+  id            String    @id
+  eventType     String    @map("event_type")
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  payload       Json
+  status        String    @default("pending")
+  attemptCount  Int       @default(0) @map("attempt_count")
+  nextAttemptAt DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimedAt     DateTime? @map("claimed_at") @db.Timestamptz(6)
+  claimedBy     String?   @map("claimed_by")
+  processedAt   DateTime? @map("processed_at") @db.Timestamptz(6)
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("outbox_events")
+}

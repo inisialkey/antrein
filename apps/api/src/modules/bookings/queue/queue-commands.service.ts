@@ -48,6 +48,7 @@ import {
   ACTIVE_QUEUE_STATUSES,
   bumpQueueVersion,
   customerViewOf,
+  enqueueQueueEvent,
   insertBookingHistory,
   insertQueueHistory,
   jakartaBusinessDate,
@@ -328,6 +329,12 @@ export class QueueCommandsService {
         actorUserId,
         actorType: 'staff',
         metadata: { source: 'walk_in' },
+      });
+      await enqueueQueueEvent(tx, {
+        queueEntryId: entryId,
+        bookingId,
+        outletId: outlet.id,
+        businessDate,
       });
     });
 
@@ -766,6 +773,8 @@ export class QueueCommandsService {
         },
         tx,
       );
+      // Reorder changes staff-visible order only — snapshot event, no per-customer event.
+      await enqueueQueueEvent(tx, { outletId, businessDate });
       return { businessDate: dto.businessDate, queueVersion, updatedAt: at.toISOString() };
     });
   }
@@ -799,7 +808,18 @@ export class QueueCommandsService {
         if (!entry) throw queueEntryNotFound();
         // Knowing the id is not permission: the entry must belong to the business.
         if (entry.businessId !== businessId) throw forbiddenQueueResource();
-        return this.prisma.$transaction((tx) => handler(tx, entry, new Date()));
+        return this.prisma.$transaction(async (tx) => {
+          const result = await handler(tx, entry, new Date());
+          // Every versioned command touches this entry — one marker per command
+          // fans out to the customer + staff snapshot events (§49).
+          await enqueueQueueEvent(tx, {
+            queueEntryId: entry.id,
+            bookingId: entry.bookingId,
+            outletId: entry.outletId,
+            businessDate: entry.businessDate,
+          });
+          return result;
+        });
       },
     });
   }

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/realtime/realtime_client.dart';
+import 'package:antrein/core/realtime/realtime_event.dart';
 import 'package:antrein/features/customer_queue/domain/entities/queue_entry.dart';
 import 'package:antrein/features/customer_queue/domain/usecases/get_customer_queue.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,15 +12,19 @@ import 'package:injectable/injectable.dart';
 part 'customer_queue_state.dart';
 part 'customer_queue_cubit.freezed.dart';
 
-/// Live view of the customer's own queue position (contract §81). Until the M9
-/// WebSocket feed lands, freshness comes from a short poll + pull-to-refresh.
+/// Live view of the customer's own queue position (contract §81). The
+/// `/realtime` feed (§107) drives updates; a slow poll + pull-to-refresh recover
+/// anything dropped between reconnects (§113).
 @injectable
 class CustomerQueueCubit extends Cubit<CustomerQueueState> {
-  CustomerQueueCubit(this._getQueue)
+  CustomerQueueCubit(this._getQueue, this._realtime)
     : super(const CustomerQueueState(status: QueueLoadStatus.initial));
 
   final GetCustomerQueue _getQueue;
+  final RealtimeClient _realtime;
   Timer? _pollTimer;
+  StreamSubscription<RealtimeEvent>? _eventSub;
+  StreamSubscription<void>? _connSub;
   String? _bookingId;
 
   Future<void> load(String bookingId) async {
@@ -26,6 +32,7 @@ class CustomerQueueCubit extends Cubit<CustomerQueueState> {
     emit(state.copyWith(status: QueueLoadStatus.loading));
     await _fetch(silent: false);
     _startPolling();
+    _startRealtime();
   }
 
   /// Foreground refresh (pull-to-refresh) — keeps the current screen visible.
@@ -76,11 +83,28 @@ class CustomerQueueCubit extends Cubit<CustomerQueueState> {
     );
   }
 
+  /// Live queue updates over WebSocket (§107). The customer's own events arrive
+  /// on the auto-joined `user:{id}` room; each — and every (re)connect (§112) —
+  /// triggers an authoritative REST refetch rather than trusting the payload.
+  void _startRealtime() {
+    unawaited(_eventSub?.cancel());
+    unawaited(_connSub?.cancel());
+    _eventSub = _realtime.events
+        .where(
+          (e) =>
+              e.type == 'queue.entry.updated.v1' &&
+              e.data['bookingId'] == _bookingId,
+        )
+        .listen((_) => unawaited(refresh()));
+    _connSub = _realtime.connections.listen((_) => unawaited(refresh()));
+    if (!_realtime.isConnected) unawaited(_realtime.connect());
+  }
+
   void _startPolling() {
     _pollTimer?.cancel();
-    // ponytail: 15s poll stands in for the M9 realtime queue feed; upgrade to the
-    // WebSocket `/realtime` subscription when it lands.
-    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    // ponytail: slow safety poll behind the WebSocket feed — recovers an event
+    // dropped between reconnects (§113 at-least-once). WS is the primary path.
+    _pollTimer = Timer.periodic(const Duration(seconds: 45), (_) {
       if (state.entry?.isTerminal ?? false) {
         _pollTimer?.cancel();
         return;
@@ -92,6 +116,8 @@ class CustomerQueueCubit extends Cubit<CustomerQueueState> {
   @override
   Future<void> close() {
     _pollTimer?.cancel();
+    unawaited(_eventSub?.cancel());
+    unawaited(_connSub?.cancel());
     return super.close();
   }
 }

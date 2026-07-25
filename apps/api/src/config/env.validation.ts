@@ -91,6 +91,11 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(0)
   PAYMENT_EXPIRATION_JOB_INTERVAL_MS = 60_000;
+
+  /** Outbox dispatcher cadence (realtime-queue §49); 0 disables the timer (tests drive runOnce). */
+  @IsInt()
+  @Min(0)
+  OUTBOX_DISPATCHER_INTERVAL_MS = 2_000;
 }
 
 const NUMERIC_KEYS = [
@@ -101,6 +106,7 @@ const NUMERIC_KEYS = [
   'SMTP_PORT',
   'PAYMENT_EXPIRATION_MINUTES',
   'PAYMENT_EXPIRATION_JOB_INTERVAL_MS',
+  'OUTBOX_DISPATCHER_INTERVAL_MS',
 ] as const;
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

@@ -25,6 +25,8 @@ dependencies:
   json_annotation: ^4.12.0
   # Networking.
   dio: ^5.9.2
+  # Realtime — Socket.IO client for the /realtime queue feed (M9).
+  socket_io_client: ^2.0.3+1
   # Secure token storage.
   flutter_secure_storage: ^9.2.4
   # Navigation — named routes only.

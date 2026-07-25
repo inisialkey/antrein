@@ -1,5 +1,6 @@
 import { newId } from '../../../common/id/id';
 import { Prisma, PrismaClient, QueueEntry } from '../../../generated/prisma/client';
+import { enqueueOutbox } from '../../../infrastructure/outbox/outbox';
 import { jakartaDateString } from '../../schedules/slots';
 import { BookingStatus, assertBookingTransition } from '../domain/booking-status.policy';
 import { estimatedWaitMinutes, peopleAheadOf } from './domain/queue-math';
@@ -217,4 +218,55 @@ export async function customerViewOf(db: QueueDb, entry: QueueEntry): Promise<Cu
     currentServingNumber: serving?.displayNumber ?? null,
     estimatedWaitMinutes: estimatedWaitMinutes(peopleAhead, averageMinutes),
   };
+}
+
+/** Compact outlet snapshot for the staff `queue.snapshot.updated.v1` event (§108). */
+export async function outletSnapshotSummary(
+  db: QueueDb,
+  outletId: string,
+  businessDate: Date,
+): Promise<{
+  version: number;
+  currentServing: { queueEntryId: string; displayNumber: string } | null;
+  waitingCount: number;
+  skippedCount: number;
+}> {
+  const active = await db.queueEntry.findMany({
+    where: { outletId, businessDate, status: { in: ACTIVE_QUEUE_STATUSES } },
+    orderBy: [{ sortOrder: 'asc' }, { checkedInAt: 'asc' }, { queueNumber: 'asc' }],
+    select: { id: true, status: true, displayNumber: true },
+  });
+  const serving =
+    active.find((e) => e.status === 'in_service') ?? active.find((e) => e.status === 'called');
+  const counter = await db.queueCounter.findUnique({
+    where: { outletId_businessDate: { outletId, businessDate } },
+  });
+  return {
+    version: counter?.version ?? 1,
+    currentServing: serving
+      ? { queueEntryId: serving.id, displayNumber: serving.displayNumber }
+      : null,
+    waitingCount: active.filter((e) => e.status === 'waiting').length,
+    skippedCount: active.filter((e) => e.status === 'skipped').length,
+  };
+}
+
+/**
+ * Enqueue the outbox marker for a queue mutation (realtime-queue §49). Thin by
+ * design: the dispatcher re-reads current state to shape the customer + staff
+ * events. An entry mutation (queueEntryId set) fans out to both audiences; an
+ * outlet-level change (reorder) fires the staff snapshot only.
+ */
+export async function enqueueQueueEvent(
+  tx: Prisma.TransactionClient,
+  input: { queueEntryId?: string; bookingId?: string | null; outletId: string; businessDate: Date },
+): Promise<void> {
+  const businessDate = input.businessDate.toISOString().slice(0, 10);
+  const isEntry = !!input.queueEntryId;
+  await enqueueOutbox(tx, {
+    eventType: isEntry ? 'queue.entry.updated.v1' : 'queue.snapshot.updated.v1',
+    aggregateType: isEntry ? 'queue_entry' : 'outlet_queue',
+    aggregateId: input.queueEntryId ?? input.outletId,
+    payload: { bookingId: input.bookingId ?? null, outletId: input.outletId, businessDate },
+  });
 }
