@@ -21,7 +21,10 @@ import {
 } from './dto/business.dto';
 import { slugify, withSuffix } from './slug';
 
-const businessWithRelations = { policy: true, outlets: { where: { status: 'active' } } } as const;
+const businessWithRelations = {
+  policy: true,
+  outlets: { where: { status: 'active' }, include: { operatingHours: true } },
+} as const;
 
 @Injectable()
 export class BusinessesService {

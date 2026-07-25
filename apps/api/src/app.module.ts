@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
 import { OutletsModule } from './modules/outlets/outlets.module';
+import { SchedulesModule } from './modules/schedules/schedules.module';
 import { ServicesModule } from './modules/services/services.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { UsersModule } from './modules/users/users.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     BusinessesModule,
     OutletsModule,
+    SchedulesModule,
     ServicesModule,
     StaffModule,
   ],
