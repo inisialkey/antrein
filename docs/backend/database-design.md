@@ -1545,6 +1545,9 @@ create table payments (
     status text not null,
     amount integer not null,
     currency text not null default 'IDR',
+    checkout jsonb null,
+    provider_creation_attempts integer not null default 0,
+    provider_creation_last_error text null,
     expires_at timestamptz null,
     paid_at timestamptz null,
     failed_at timestamptz null,
@@ -1554,6 +1557,13 @@ create table payments (
     updated_at timestamptz not null default now()
 );
 ```
+
+Provider-creation columns (ADR 0040): `checkout` stores the normalized checkout
+instruction (`{"type": "redirect_url", "url": ...}`) persisted after provider
+creation; `provider_creation_attempts`/`provider_creation_last_error` track
+customer-driven retries. A payment with attempts > 0 and no
+`provider_reference` is a retryable creation failure — there is no separate
+`provider_creation_status` column because the state is derivable.
 
 Provider values:
 

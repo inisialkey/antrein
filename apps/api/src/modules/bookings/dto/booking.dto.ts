@@ -134,6 +134,24 @@ export class ConfirmPayAtLocationDto {
   note?: string;
 }
 
+export class RequestRefundDto {
+  @ApiProperty({ type: MoneyDto })
+  @ValidateNested()
+  @Type(() => MoneyDto)
+  amount!: MoneyDto;
+
+  @ApiProperty({ example: 'booking_cancelled' })
+  @IsString()
+  @MaxLength(100)
+  reasonCode!: string;
+
+  @ApiPropertyOptional({ example: 'Customer cancelled within full-refund window.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
 export class ListCustomerBookingsQueryDto {
   @ApiPropertyOptional({ enum: BOOKING_STATUSES })
   @IsOptional()

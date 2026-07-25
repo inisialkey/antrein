@@ -13,6 +13,26 @@ abstract final class ApiEndpoints {
   // Users
   static const String currentUser = '/me';
 
+  // Discovery (public — ADR 0022)
+  static const String businesses = '/businesses';
+  static String businessDetail(String businessId) => '/businesses/$businessId';
+  static String businessServices(String businessId) =>
+      '/businesses/$businessId/services';
+  static String businessStaff(String businessId) =>
+      '/businesses/$businessId/staff';
+  static String businessAvailability(String businessId) =>
+      '/businesses/$businessId/availability';
+
+  // Bookings (customer)
+  static const String bookings = '/bookings';
+  static String bookingDetail(String bookingId) => '/bookings/$bookingId';
+  static String bookingCancel(String bookingId) =>
+      '/bookings/$bookingId/cancel';
+
+  // Payments
+  static String paymentRefresh(String paymentId) =>
+      '/payments/$paymentId/refresh';
+
   // Health
   static const String health = '/health';
 

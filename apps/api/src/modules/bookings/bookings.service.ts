@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { newId } from '../../common/id/id';
 import { clampLimit, decodeCursor, pageOf } from '../../common/pagination/cursor';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { PaymentProviderPort } from '../../infrastructure/payments/payment-provider.port';
 import { Prisma } from '../../generated/prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { validationFailed } from '../auth/auth.errors';
@@ -22,6 +24,7 @@ import {
 } from '../schedules/slots';
 import { serviceNotFound } from '../services/service.errors';
 import { staffNotFound } from '../staff/staff.errors';
+import { RefundsService } from './refunds.service';
 import {
   bookingActiveLimitReached,
   bookingAlreadyCancelled,
@@ -44,6 +47,7 @@ import {
   bookingInclude,
   netOnlinePaidOf,
   toBookingResource,
+  toPaymentResource,
 } from './booking.mapper';
 import { formatBookingCode } from './domain/booking-code';
 import {
@@ -91,6 +95,11 @@ export class BookingsService {
     private readonly idempotency: IdempotencyService,
     private readonly memberships: MembershipsService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService,
+    private readonly refunds: RefundsService,
+    @Optional()
+    @Inject(PaymentProviderPort)
+    private readonly provider: PaymentProviderPort | null,
   ) {}
 
   async createBooking(
@@ -108,6 +117,9 @@ export class BookingsService {
         type: 'booking',
         id: (result.booking as { id: string }).id,
       }),
+      // ADR 0040: a provider outage must not freeze the key — the same key
+      // retries and resumes the already-created pending booking.
+      transientErrorCodes: ['PAYMENT_PROVIDER_UNAVAILABLE'],
       run: () => this.createBookingRun(userId, dto),
     });
   }
@@ -137,15 +149,25 @@ export class BookingsService {
     if (!service || service.businessId !== business.id) throw serviceNotFound();
     if (service.status !== 'active') throw serviceNotActive();
 
-    if (dto.paymentOption === 'pay_at_location') {
+    const isOnline = dto.paymentOption !== 'pay_at_location';
+    let requiredNow = 0;
+    if (!isOnline) {
       if (policy && !policy.allowPayAtLocation) throw paymentOptionNotAvailable();
     } else {
       const enabled =
         dto.paymentOption === 'full_payment' ? policy?.allowFullPayment : policy?.allowDeposit;
       if (!enabled) throw paymentOptionNotAvailable();
-      // ponytail: online payments land with the provider milestone (M7); until
-      // then an enabled online option has no provider to charge through.
-      throw paymentProviderUnavailable();
+      if (!this.provider) throw paymentProviderUnavailable();
+      if (dto.paymentOption === 'deposit') {
+        // ADR 0017: fixed-amount deposits only; a service without one cannot
+        // take deposit bookings.
+        if (service.depositType !== 'fixed' || service.depositValue <= 0) {
+          throw paymentOptionNotAvailable();
+        }
+        requiredNow = Math.min(service.depositValue, service.priceAmount);
+      } else {
+        requiredNow = service.priceAmount;
+      }
     }
 
     // ADR 0019: any_available staff selection is out of MVP scope.
@@ -191,6 +213,14 @@ export class BookingsService {
       expectedEndsAt,
     );
 
+    // ADR 0040 provider-failure recovery: a previous attempt may have left a
+    // pending_payment booking holding this exact slot — resume it instead of
+    // colliding with our own reservation.
+    if (isOnline) {
+      const resumed = await this.resumeRecoverableOnlineBooking(userId, dto, staff.id, scheduledAt);
+      if (resumed) return resumed;
+    }
+
     const cancellationPolicy: CancellationPolicySnapshot = {
       fullRefundBeforeMinutes: policy?.fullRefundBeforeMinutes ?? 360,
       partialRefundBeforeMinutes: policy?.partialRefundBeforeMinutes ?? 120,
@@ -199,6 +229,13 @@ export class BookingsService {
     };
 
     const bookingId = newId('bkg');
+    const paymentId = newId('pay');
+    const initialStatus: BookingStatus = isOnline ? 'pending_payment' : 'confirmed';
+    const paymentExpiresAt = isOnline
+      ? new Date(
+          now.getTime() + (this.config.get<number>('PAYMENT_EXPIRATION_MINUTES') ?? 30) * 60_000,
+        )
+      : null;
     try {
       await this.prisma.$transaction(async (tx) => {
         // Serializes same-customer creates for this business so the active-limit
@@ -234,8 +271,9 @@ export class BookingsService {
             serviceId: service.id,
             staffId: staff.id,
             bookingType: 'scheduled',
-            // ADR 0015: pay-at-location bookings confirm immediately.
-            status: 'confirmed',
+            // ADR 0015: pay-at-location confirms immediately; online payment
+            // options start pending_payment until the webhook confirms.
+            status: initialStatus,
             scheduledAt,
             expectedEndsAt,
             customerNotes: dto.customerNotes ?? null,
@@ -257,7 +295,7 @@ export class BookingsService {
             currency: 'IDR',
             depositType: service.depositType,
             depositValue: service.depositValue,
-            requiredPaymentAmount: 0,
+            requiredPaymentAmount: requiredNow,
             staffName: staff.displayName,
             cancellationPolicy: cancellationPolicy as unknown as Prisma.InputJsonValue,
           },
@@ -267,26 +305,27 @@ export class BookingsService {
             id: newId('bsh'),
             bookingId,
             fromStatus: null,
-            toStatus: 'confirmed',
+            toStatus: initialStatus,
             actorUserId: userId,
             actorType: 'customer',
           },
         });
         // GiST exclusion constraint (ADR 0027) is the final overlap authority.
         await tx.$executeRaw`
-          INSERT INTO booking_reservations (booking_id, staff_id, outlet_id, schedule_range)
+          INSERT INTO booking_reservations (booking_id, staff_id, outlet_id, schedule_range, expires_at)
           VALUES (${bookingId}, ${staff.id}, ${outlet.id},
-                  tstzrange(${scheduledAt}, ${expectedEndsAt}, '[)'))`;
+                  tstzrange(${scheduledAt}, ${expectedEndsAt}, '[)'), ${paymentExpiresAt})`;
         await tx.payment.create({
           data: {
-            id: newId('pay'),
+            id: paymentId,
             bookingId,
             businessId: business.id,
             customerUserId: userId,
-            provider: 'pay_at_location',
+            provider: isOnline ? this.provider!.provider : 'pay_at_location',
             paymentOption: dto.paymentOption,
             status: 'pending',
-            amount: service.priceAmount,
+            amount: isOnline ? requiredNow : service.priceAmount,
+            expiresAt: paymentExpiresAt,
           },
         });
         // ponytail: booking.created outbox event lands with the realtime
@@ -298,7 +337,93 @@ export class BookingsService {
     }
 
     const booking = await this.requireBooking(bookingId);
-    return { booking: toBookingResource(booking), payment: null };
+    if (!isOnline) return { booking: toBookingResource(booking), payment: null };
+    return this.finalizeProviderCreation(booking, paymentId);
+  }
+
+  /**
+   * Booking-payment §24 transaction 2: call the provider after commit, persist
+   * the reference + checkout, or record the failed attempt and surface a
+   * retryable PAYMENT_PROVIDER_UNAVAILABLE (ADR 0040 — no background retry).
+   */
+  private async finalizeProviderCreation(
+    booking: BookingWithRelations,
+    paymentId: string,
+  ): Promise<Record<string, unknown>> {
+    const payment = booking.payments.find((p) => p.id === paymentId);
+    if (!payment || !this.provider) throw paymentProviderUnavailable();
+    try {
+      const created = await this.provider.createPayment({
+        paymentId: payment.id,
+        amount: payment.amount,
+        currency: payment.currency,
+        expiresAt: payment.expiresAt ?? new Date(),
+      });
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          providerReference: created.providerReference,
+          checkout: created.checkout as unknown as Prisma.InputJsonValue,
+          providerCreationAttempts: { increment: 1 },
+          providerCreationLastError: null,
+        },
+      });
+    } catch (error) {
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          providerCreationAttempts: { increment: 1 },
+          providerCreationLastError: error instanceof Error ? error.message : String(error),
+        },
+      });
+      throw paymentProviderUnavailable();
+    }
+
+    const refreshed = await this.requireBooking(booking.id);
+    const row = refreshed.payments.find((p) => p.id === paymentId);
+    return {
+      booking: toBookingResource(refreshed),
+      payment: row ? toPaymentResource(row) : null,
+    };
+  }
+
+  /** Finds a still-recoverable pending_payment booking for the same slot (ADR 0040). */
+  private async resumeRecoverableOnlineBooking(
+    userId: string,
+    dto: CreateBookingDto,
+    staffId: string,
+    scheduledAt: Date,
+  ): Promise<Record<string, unknown> | null> {
+    const existing = await this.prisma.booking.findFirst({
+      where: {
+        customerUserId: userId,
+        businessId: dto.businessId,
+        outletId: dto.outletId,
+        serviceId: dto.serviceId,
+        staffId,
+        scheduledAt,
+        status: 'pending_payment',
+        paymentOption: dto.paymentOption,
+      },
+      include: bookingInclude,
+    });
+    if (!existing) return null;
+    const pending = existing.payments.find(
+      (p) =>
+        p.provider !== 'pay_at_location' &&
+        p.status === 'pending' &&
+        p.expiresAt !== null &&
+        p.expiresAt > new Date(),
+    );
+    if (!pending) return null;
+    if (pending.providerReference) {
+      // Provider creation already succeeded; the earlier response was lost.
+      return {
+        booking: toBookingResource(existing),
+        payment: toPaymentResource(pending),
+      };
+    }
+    return this.finalizeProviderCreation(existing, pending.id);
   }
 
   /** Revalidates outlet hours, closed dates and the staff schedule (§12 steps 14–17). */
@@ -402,13 +527,20 @@ export class BookingsService {
           reason: dto.reason ?? null,
           cancelledAt: now,
         });
-        // ponytail: refundAmount is always 0 until online payments exist (ADR
-        // 0018 — only online net paid refunds); the refunds table lands in M7.
+        // ADR 0018: customer cancellations refund net online paid per the
+        // snapshotted thresholds.
+        const refund = await this.refunds.createCancellationRefund({
+          bookingId: booking.id,
+          amount: refundAmount,
+          actorUserId: userId,
+          reasonCode: dto.reasonCode ?? 'customer_cancelled',
+          reason: dto.reason ?? null,
+        });
         return {
           bookingId: booking.id,
           status: 'cancelled',
           cancelledAt: now.toISOString(),
-          refund: { required: refundAmount > 0 },
+          refund: refund ? { required: true, ...refund } : { required: false },
         };
       },
     });
@@ -445,12 +577,20 @@ export class BookingsService {
           cancelledAt: now,
           audit: { businessId },
         });
+        const refund = await this.refunds.createCancellationRefund({
+          bookingId: booking.id,
+          amount: refundAmount,
+          actorUserId,
+          reasonCode: dto.reasonCode,
+          reason: dto.reason,
+          auditBusinessId: businessId,
+        });
         // ponytail: customer notification lands with the notifications milestone.
         return {
           bookingId: booking.id,
           status: 'cancelled',
           cancelledAt: now.toISOString(),
-          refund: { required: refundAmount > 0 },
+          refund: refund ? { required: true, ...refund } : { required: false },
         };
       },
     });

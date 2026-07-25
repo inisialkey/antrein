@@ -36,6 +36,7 @@ model User {
   createdBookings        Booking[] @relation("CreatedBookings")
   bookingStatusChanges   BookingStatusHistory[] @relation("BookingStatusActor")
   payments               Payment[] @relation("CustomerPayments")
+  requestedRefunds       Refund[] @relation("RequestedRefunds")
 
   @@map("users")
 }
@@ -140,6 +141,7 @@ model Business {
   services    Service[]
   bookings    Booking[]
   payments    Payment[]
+  refunds     Refund[]
 
   @@index([status], map: "businesses_status_idx")
   @@index([ownerUserId], map: "businesses_owner_idx")
@@ -442,6 +444,7 @@ model Booking {
   statusHistory BookingStatusHistory[]
   reservation   BookingReservation?
   payments      Payment[]
+  refunds       Refund[]
 
   @@unique([businessId, bookingCode], map: "bookings_code_uq")
   @@index([customerUserId, createdAt(sort: Desc)], map: "bookings_customer_created_idx")
@@ -520,32 +523,107 @@ model BookingCodeCounter {
 }
 
 model Payment {
-  id                String    @id
-  bookingId         String    @map("booking_id")
-  businessId        String    @map("business_id")
-  customerUserId    String?   @map("customer_user_id")
-  provider          String
-  providerReference String?   @map("provider_reference")
-  paymentOption     String    @map("payment_option")
-  method            String?
-  status            String
-  amount            Int
-  currency          String    @default("IDR")
-  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(6)
-  paidAt            DateTime? @map("paid_at") @db.Timestamptz(6)
-  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
-  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz(6)
-  version           Int       @default(1)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                        String    @id
+  bookingId                 String    @map("booking_id")
+  businessId                String    @map("business_id")
+  customerUserId            String?   @map("customer_user_id")
+  provider                  String
+  providerReference         String?   @map("provider_reference")
+  paymentOption             String    @map("payment_option")
+  method                    String?
+  status                    String
+  amount                    Int
+  currency                  String    @default("IDR")
+  checkout                  Json?
+  providerCreationAttempts  Int       @default(0) @map("provider_creation_attempts")
+  providerCreationLastError String?   @map("provider_creation_last_error")
+  expiresAt                 DateTime? @map("expires_at") @db.Timestamptz(6)
+  paidAt                    DateTime? @map("paid_at") @db.Timestamptz(6)
+  failedAt                  DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt               DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  version                   Int       @default(1)
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  booking  Booking  @relation(fields: [bookingId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  customer User?    @relation("CustomerPayments", fields: [customerUserId], references: [id])
+  booking  Booking        @relation(fields: [bookingId], references: [id])
+  business Business       @relation(fields: [businessId], references: [id])
+  customer User?          @relation("CustomerPayments", fields: [customerUserId], references: [id])
+  events   PaymentEvent[]
+  refunds  Refund[]
 
   @@index([bookingId, createdAt], map: "payments_booking_created_idx")
   @@index([businessId, status, createdAt], map: "payments_business_status_idx")
   @@map("payments")
+}
+
+model PaymentEvent {
+  id                  String    @id
+  paymentId           String?   @map("payment_id")
+  provider            String
+  providerEventId     String    @map("provider_event_id")
+  eventType           String    @map("event_type")
+  signatureValid      Boolean   @map("signature_valid")
+  amount              Int?
+  currency            String?
+  payload             Json
+  processingStatus    String    @default("received") @map("processing_status")
+  processingErrorCode String?   @map("processing_error_code")
+  processedAt         DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([provider, providerEventId], map: "payment_events_provider_event_uq")
+  @@index([paymentId, createdAt], map: "payment_events_payment_created_idx")
+  @@index([processingStatus, createdAt], map: "payment_events_status_created_idx")
+  @@map("payment_events")
+}
+
+model Refund {
+  id                String    @id
+  paymentId         String    @map("payment_id")
+  bookingId         String    @map("booking_id")
+  businessId        String    @map("business_id")
+  requestedByUserId String?   @map("requested_by_user_id")
+  providerReference String?   @map("provider_reference")
+  status            String
+  amount            Int
+  currency          String    @default("IDR")
+  reasonCode        String    @map("reason_code")
+  reason            String?
+  requestedAt       DateTime  @map("requested_at") @db.Timestamptz(6)
+  processedAt       DateTime? @map("processed_at") @db.Timestamptz(6)
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  business    Business @relation(fields: [businessId], references: [id])
+  requestedBy User?    @relation("RequestedRefunds", fields: [requestedByUserId], references: [id])
+  events      RefundEvent[]
+
+  @@index([paymentId, createdAt], map: "refunds_payment_created_idx")
+  @@index([businessId, status, createdAt], map: "refunds_business_status_idx")
+  @@map("refunds")
+}
+
+model RefundEvent {
+  id               String    @id
+  refundId         String?   @map("refund_id")
+  provider         String
+  providerEventId  String    @map("provider_event_id")
+  eventType        String    @map("event_type")
+  payload          Json
+  processingStatus String    @default("received") @map("processing_status")
+  processedAt      DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  refund Refund? @relation(fields: [refundId], references: [id])
+
+  @@unique([provider, providerEventId], map: "refund_events_provider_event_uq")
+  @@map("refund_events")
 }
 
 model ClosedDate {

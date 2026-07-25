@@ -19,8 +19,10 @@ import {
   BusinessCancelBookingDto,
   ConfirmPayAtLocationDto,
   ListBusinessBookingsQueryDto,
+  RequestRefundDto,
 } from './dto/booking.dto';
 import { PaymentsService } from './payments.service';
+import { RefundsService } from './refunds.service';
 
 @ApiTags('business-bookings')
 @ApiBearerAuth()
@@ -30,6 +32,7 @@ export class BusinessBookingsController {
   constructor(
     private readonly bookings: BookingsService,
     private readonly payments: PaymentsService,
+    private readonly refunds: RefundsService,
   ) {}
 
   @Get(':businessId/bookings')
@@ -92,5 +95,20 @@ export class BusinessBookingsController {
       dto,
       idempotencyKey,
     );
+  }
+
+  @Post(':businessId/payments/:paymentId/refunds')
+  @HttpCode(202)
+  @RequireBusinessPermission('payment.refund')
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiOperation({ summary: 'Request refund (contract §74)' })
+  requestRefund(
+    @CurrentUser() principal: AccessTokenPrincipal,
+    @Param('businessId') businessId: string,
+    @Param('paymentId') paymentId: string,
+    @Body() dto: RequestRefundDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+  ): ReturnType<RefundsService['requestRefund']> {
+    return this.refunds.requestRefund(principal.userId, businessId, paymentId, dto, idempotencyKey);
   }
 }

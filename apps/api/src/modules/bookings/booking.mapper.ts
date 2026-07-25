@@ -121,6 +121,7 @@ export function toPaymentResource(payment: {
   method: string | null;
   status: string;
   amount: number;
+  checkout?: unknown;
   paidAt: Date | null;
   expiresAt: Date | null;
   createdAt: Date;
@@ -135,6 +136,8 @@ export function toPaymentResource(payment: {
     method: payment.method,
     status: payment.status,
     amount: money(payment.amount),
+    // §60: normalized checkout instruction; null for pay-at-location.
+    checkout: payment.checkout ?? null,
     paidAt: payment.paidAt?.toISOString() ?? null,
     expiresAt: payment.expiresAt?.toISOString() ?? null,
     createdAt: payment.createdAt.toISOString(),

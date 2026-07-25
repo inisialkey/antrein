@@ -1,5 +1,4 @@
 import 'package:antrein/app/shells/coming_soon_page.dart';
-import 'package:antrein/app/shells/customer_home_page.dart';
 import 'package:antrein/app/shells/customer_shell.dart';
 import 'package:antrein/core/extensions/extensions.dart';
 import 'package:antrein/core/router/auth_redirect.dart';
@@ -10,7 +9,14 @@ import 'package:antrein/features/auth/presentation/pages/forgot_password_page.da
 import 'package:antrein/features/auth/presentation/pages/login_page.dart';
 import 'package:antrein/features/auth/presentation/pages/register_page.dart';
 import 'package:antrein/features/auth/presentation/pages/reset_password_page.dart';
+import 'package:antrein/features/booking/domain/entities/booking_draft.dart';
+import 'package:antrein/features/booking/presentation/pages/booking_confirm_page.dart';
+import 'package:antrein/features/booking/presentation/pages/booking_detail_page.dart';
+import 'package:antrein/features/booking/presentation/pages/my_bookings_page.dart';
+import 'package:antrein/features/booking/presentation/pages/slot_picker_page.dart';
 import 'package:antrein/features/business_dashboard/presentation/pages/business_home_page.dart';
+import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
+import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
 import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -66,6 +72,33 @@ class AppRouter {
         name: Routes.businessHome.name,
         builder: (context, state) => const BusinessHomePage(),
       ),
+      // Booking flow — full-screen pages pushed over the customer shell.
+      GoRoute(
+        path: Routes.businessDetail.path,
+        name: Routes.businessDetail.name,
+        builder: (context, state) => BusinessDetailPage(
+          businessId: state.pathParameters['businessId']!,
+        ),
+      ),
+      GoRoute(
+        path: Routes.bookingSlots.path,
+        name: Routes.bookingSlots.name,
+        builder: (context, state) =>
+            SlotPickerPage(args: state.extra! as SlotPickerArgs),
+      ),
+      GoRoute(
+        path: Routes.bookingConfirm.path,
+        name: Routes.bookingConfirm.name,
+        builder: (context, state) =>
+            BookingConfirmPage(draft: state.extra! as BookingDraft),
+      ),
+      GoRoute(
+        path: Routes.bookingDetail.path,
+        name: Routes.bookingDetail.name,
+        builder: (context, state) => BookingDetailPage(
+          bookingId: state.pathParameters['bookingId']!,
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             CustomerShell(navigationShell: navigationShell),
@@ -75,7 +108,7 @@ class AppRouter {
               GoRoute(
                 path: Routes.customerHome.path,
                 name: Routes.customerHome.name,
-                builder: (context, state) => const CustomerHomePage(),
+                builder: (context, state) => const DiscoveryPage(),
               ),
             ],
           ),
@@ -84,8 +117,7 @@ class AppRouter {
               GoRoute(
                 path: Routes.customerBookings.path,
                 name: Routes.customerBookings.name,
-                builder: (context, state) =>
-                    ComingSoonPage(title: context.l10n.tabBookings),
+                builder: (context, state) => const MyBookingsPage(),
               ),
             ],
           ),

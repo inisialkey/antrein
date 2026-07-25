@@ -20,6 +20,21 @@ abstract final class ApiErrorCodes {
   static const String rateLimitExceeded = 'RATE_LIMIT_EXCEEDED';
   static const String validationFailed = 'VALIDATION_FAILED';
 
+  // Booking + payment (api-contract §60, §63, §72 — mirrors booking.errors.ts)
+  static const String bookingSlotUnavailable = 'BOOKING_SLOT_UNAVAILABLE';
+  static const String bookingActiveLimitReached =
+      'BOOKING_ACTIVE_LIMIT_REACHED';
+  static const String bookingLeadTimeNotMet = 'BOOKING_LEAD_TIME_NOT_MET';
+  static const String bookingDateInPast = 'BOOKING_DATE_IN_PAST';
+  static const String bookingCannotBeCancelled = 'BOOKING_CANNOT_BE_CANCELLED';
+  static const String bookingAlreadyCancelled = 'BOOKING_ALREADY_CANCELLED';
+  static const String paymentOptionNotAvailable =
+      'PAYMENT_OPTION_NOT_AVAILABLE';
+  static const String paymentProviderUnavailable =
+      'PAYMENT_PROVIDER_UNAVAILABLE';
+  static const String paymentRefreshRateLimited =
+      'PAYMENT_STATUS_REFRESH_RATE_LIMITED';
+
   /// Access-token 401s that should trigger a transparent refresh + retry.
   /// (The API returns `_INVALID` for both malformed and expired access tokens.)
   static const Set<String> refreshable = {

@@ -4,7 +4,8 @@ import { AppModule } from './app.module';
 import { buildOpenApiDocument } from './openapi';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: webhook signature verification hashes the exact bytes received.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.setGlobalPrefix('api/v1', { exclude: ['health/live', 'health/ready'] });
   app.enableShutdownHooks();

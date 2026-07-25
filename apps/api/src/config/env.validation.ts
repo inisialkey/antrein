@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -72,6 +73,24 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   AUTH_RATE_LIMIT_DISABLED?: string;
+
+  /** Payment provider adapter: 'sandbox' (deterministic local provider) or 'none'. */
+  @IsIn(['sandbox', 'none'])
+  PAYMENT_PROVIDER = 'sandbox';
+
+  @IsString()
+  @MinLength(8)
+  PAYMENT_WEBHOOK_SECRET = 'sandbox-webhook-secret';
+
+  /** ADR 0033: server-side online payment expiry. */
+  @IsInt()
+  @Min(1)
+  PAYMENT_EXPIRATION_MINUTES = 30;
+
+  /** ADR 0040: expiration job cadence; 0 disables the timer (tests drive runOnce). */
+  @IsInt()
+  @Min(0)
+  PAYMENT_EXPIRATION_JOB_INTERVAL_MS = 60_000;
 }
 
 const NUMERIC_KEYS = [
@@ -80,6 +99,8 @@ const NUMERIC_KEYS = [
   'REFRESH_TOKEN_TTL_DAYS',
   'RESET_TOKEN_TTL_MINUTES',
   'SMTP_PORT',
+  'PAYMENT_EXPIRATION_MINUTES',
+  'PAYMENT_EXPIRATION_JOB_INTERVAL_MS',
 ] as const;
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

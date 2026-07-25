@@ -3275,6 +3275,10 @@ Purpose:
 - Never bypass signature-verified provider evidence.
 - Must be rate-limited.
 
+`refreshedFromProvider` is `false` when the provider could not be queried (ADR
+0029) — the stored state is returned and the request never fails over provider
+unavailability.
+
 Response `200`:
 
 ```json
@@ -3286,7 +3290,8 @@ Response `200`:
       "status": "paid",
       "paidAt": "2026-07-21T13:35:00+07:00"
     },
-    "bookingStatus": "confirmed"
+    "bookingStatus": "confirmed",
+    "refreshedFromProvider": true
   },
   "meta": {
     "requestId": "req_01J...",
