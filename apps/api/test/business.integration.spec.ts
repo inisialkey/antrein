@@ -270,7 +270,10 @@ describe('Business, service, and staff endpoints (integration)', () => {
       });
       expect(res.body.data.cancellationPolicy.summary).toContain('6 hours');
       expect(res.body.data.outlets).toHaveLength(1);
-      expect(res.body.data.outlets[0].operatingHours).toEqual([]);
+      // A fresh outlet has no configured hours: normalized as 7 closed days (M5).
+      const hours = res.body.data.outlets[0].operatingHours as Array<{ isClosed: boolean }>;
+      expect(hours).toHaveLength(7);
+      expect(hours.every((d) => d.isClosed)).toBe(true);
     });
 
     it('404s unknown businesses', async () => {

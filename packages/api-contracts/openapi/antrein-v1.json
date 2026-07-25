@@ -441,6 +441,304 @@
         ]
       }
     },
+    "/api/v1/businesses/{businessId}/availability": {
+      "get": {
+        "operationId": "SchedulesController_availability",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "out_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "svc_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "description": "Required in MVP (ADR 0019).",
+            "schema": {
+              "example": "stf_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-25",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get available booking slots (contract §42)",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/operating-hours": {
+      "get": {
+        "operationId": "SchedulesController_getOperatingHours",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get outlet operating hours",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "put": {
+        "operationId": "SchedulesController_replaceOperatingHours",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceOperatingHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace outlet operating hours",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/closed-dates": {
+      "get": {
+        "operationId": "SchedulesController_listClosedDates",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List closed dates",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "post": {
+        "operationId": "SchedulesController_createClosedDate",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClosedDateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a closed date",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff/{staffId}/schedule": {
+      "put": {
+        "operationId": "SchedulesController_replaceStaffSchedule",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceStaffScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace a staff weekly schedule",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
     "/api/v1/businesses/{businessId}/services": {
       "get": {
         "operationId": "ServicesController_list",
@@ -1207,6 +1505,164 @@
             "$ref": "#/components/schemas/AddressDto"
           }
         }
+      },
+      "OperatingPeriodDto": {
+        "type": "object",
+        "properties": {
+          "opensAt": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "closesAt": {
+            "type": "string",
+            "example": "21:00"
+          }
+        },
+        "required": [
+          "opensAt",
+          "closesAt"
+        ]
+      },
+      "OperatingDayDto": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "string",
+            "enum": [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday"
+            ]
+          },
+          "isClosed": {
+            "type": "boolean",
+            "example": false
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatingPeriodDto"
+            }
+          }
+        },
+        "required": [
+          "dayOfWeek",
+          "isClosed",
+          "periods"
+        ]
+      },
+      "ReplaceOperatingHoursDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatingDayDto"
+            }
+          }
+        },
+        "required": [
+          "timezone",
+          "days"
+        ]
+      },
+      "CreateClosedDateDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-08-17"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Public holiday"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      },
+      "StaffPeriodDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "endsAt": {
+            "type": "string",
+            "example": "17:00"
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "StaffDayDto": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "string",
+            "enum": [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday"
+            ]
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPeriodDto"
+            }
+          },
+          "breaks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPeriodDto"
+            }
+          }
+        },
+        "required": [
+          "dayOfWeek",
+          "isAvailable",
+          "periods"
+        ]
+      },
+      "ReplaceStaffScheduleDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffDayDto"
+            }
+          }
+        },
+        "required": [
+          "timezone",
+          "days"
+        ]
       },
       "MoneyDto": {
         "type": "object",

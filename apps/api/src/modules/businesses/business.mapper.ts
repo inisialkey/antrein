@@ -1,5 +1,33 @@
-import { Business, BusinessPolicy, Outlet } from '../../generated/prisma/client';
+import {
+  Business,
+  BusinessPolicy,
+  Outlet,
+  OutletOperatingHour,
+} from '../../generated/prisma/client';
+import { operatingDaysOf } from '../schedules/schedules.service';
+import { JAKARTA_UTC_OFFSET_MINUTES, dbTimeToString, toMinutes } from '../schedules/slots';
 import { PaymentOptionLabel } from './dto/business.dto';
+
+type OutletWithHours = Outlet & { operatingHours: OutletOperatingHour[] };
+
+/**
+ * Display hint only — availability (§42) is the authoritative check.
+ * ponytail: ignores closed_dates; wire them in if the holiday mismatch ever matters.
+ */
+export function isOpenNowOf(hours: OutletOperatingHour[], now = new Date()): boolean {
+  const jakarta = new Date(now.getTime() + JAKARTA_UTC_OFFSET_MINUTES * 60_000);
+  const day = jakarta.getUTCDay();
+  const minutes = jakarta.getUTCHours() * 60 + jakarta.getUTCMinutes();
+  return hours.some(
+    (r) =>
+      r.dayOfWeek === day &&
+      !r.isClosed &&
+      r.opensAt &&
+      r.closesAt &&
+      toMinutes(dbTimeToString(r.opensAt)) <= minutes &&
+      minutes < toMinutes(dbTimeToString(r.closesAt)),
+  );
+}
 
 export interface Money {
   amount: number;
@@ -34,7 +62,7 @@ export function cancellationSummaryOf(policy: BusinessPolicy): string {
 }
 
 export function toBusinessSummary(
-  business: Business & { policy: BusinessPolicy | null; outlets: Outlet[] },
+  business: Business & { policy: BusinessPolicy | null; outlets: OutletWithHours[] },
   priceRange: { minimum: number; maximum: number } | null,
 ): Record<string, unknown> {
   const outlet = business.outlets[0];
@@ -51,8 +79,7 @@ export function toBusinessSummary(
           name: outlet.name,
           address: addressOf(outlet),
           timezone: outlet.timezone,
-          // ponytail: computed from outlet_operating_hours once scheduling (M5) lands.
-          isOpenNow: false,
+          isOpenNow: isOpenNowOf(outlet.operatingHours),
         }
       : null,
     priceRange: priceRange
@@ -63,7 +90,7 @@ export function toBusinessSummary(
 }
 
 export function toBusinessDetails(
-  business: Business & { policy: BusinessPolicy | null; outlets: Outlet[] },
+  business: Business & { policy: BusinessPolicy | null; outlets: OutletWithHours[] },
 ): Record<string, unknown> {
   const policy = business.policy;
   return {
@@ -90,8 +117,7 @@ export function toBusinessDetails(
       phoneNumber: o.phoneNumber,
       address: addressOf(o),
       timezone: o.timezone,
-      // ponytail: empty until scheduling (M5) persists outlet_operating_hours.
-      operatingHours: [],
+      operatingHours: operatingDaysOf(o.operatingHours),
     })),
     createdAt: business.createdAt.toISOString(),
     updatedAt: business.updatedAt.toISOString(),

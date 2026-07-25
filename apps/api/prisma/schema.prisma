@@ -31,6 +31,7 @@ model User {
   memberships            BusinessMembership[]
   sentInvitations        StaffInvitation[] @relation("InvitedBy")
   acceptedInvitations    StaffInvitation[] @relation("AcceptedBy")
+  createdClosedDates     ClosedDate[]
 
   @@map("users")
 }
@@ -177,8 +178,10 @@ model Outlet {
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staffAssignments StaffOutlet[]
+  operatingHours   OutletOperatingHour[]
+  closedDates      ClosedDate[]
 
   @@index([businessId, status], map: "outlets_business_status_idx")
   @@map("outlets")
@@ -248,6 +251,7 @@ model StaffProfile {
   membership        BusinessMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
   outletAssignments StaffOutlet[]
   serviceLinks      StaffService[]
+  schedules         StaffSchedule[]
 
   @@index([businessId, status], map: "staff_profiles_business_status_idx")
   @@map("staff_profiles")
@@ -344,4 +348,67 @@ model AuditLog {
   @@index([resourceType, resourceId, createdAt], map: "audit_logs_resource_idx")
   @@index([businessId, createdAt(sort: Desc)], map: "audit_logs_business_created_idx")
   @@map("audit_logs")
+}
+
+model OutletOperatingHour {
+  id          String    @id
+  outletId    String    @map("outlet_id")
+  dayOfWeek   Int       @map("day_of_week") @db.SmallInt
+  periodOrder Int       @default(0) @map("period_order") @db.SmallInt
+  opensAt     DateTime? @map("opens_at") @db.Time(6)
+  closesAt    DateTime? @map("closes_at") @db.Time(6)
+  isClosed    Boolean   @default(false) @map("is_closed")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([outletId, dayOfWeek, periodOrder], map: "outlet_operating_hours_period_uq")
+  @@map("outlet_operating_hours")
+}
+
+model StaffSchedule {
+  id          String    @id
+  staffId     String    @map("staff_id")
+  dayOfWeek   Int       @map("day_of_week") @db.SmallInt
+  periodOrder Int       @default(0) @map("period_order") @db.SmallInt
+  startsAt    DateTime? @map("starts_at") @db.Time(6)
+  endsAt      DateTime? @map("ends_at") @db.Time(6)
+  isAvailable Boolean   @default(true) @map("is_available")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  staff  StaffProfile         @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  breaks StaffScheduleBreak[]
+
+  @@unique([staffId, dayOfWeek, periodOrder], map: "staff_schedules_period_uq")
+  @@map("staff_schedules")
+}
+
+model StaffScheduleBreak {
+  id              String   @id
+  staffScheduleId String   @map("staff_schedule_id")
+  startsAt        DateTime @map("starts_at") @db.Time(6)
+  endsAt          DateTime @map("ends_at") @db.Time(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  schedule StaffSchedule @relation(fields: [staffScheduleId], references: [id], onDelete: Cascade)
+
+  @@map("staff_schedule_breaks")
+}
+
+model ClosedDate {
+  id              String   @id
+  outletId        String   @map("outlet_id")
+  closedDate      DateTime @map("closed_date") @db.Date
+  reason          String?
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  outlet    Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdByUserId], references: [id])
+
+  @@unique([outletId, closedDate], map: "closed_dates_outlet_date_uq")
+  @@index([closedDate], map: "closed_dates_date_idx")
+  @@map("closed_dates")
 }
