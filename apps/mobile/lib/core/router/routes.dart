@@ -19,6 +19,7 @@ enum Routes {
   bookingSlots('/book/slots'),
   bookingConfirm('/book/confirm'),
   bookingDetail('/booking/:bookingId'),
+  customerQueue('/queue/:bookingId'),
 
   // Business shell (stub until M4)
   businessHome('/business');

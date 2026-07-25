@@ -28,6 +28,8 @@ abstract final class ApiEndpoints {
   static String bookingDetail(String bookingId) => '/bookings/$bookingId';
   static String bookingCancel(String bookingId) =>
       '/bookings/$bookingId/cancel';
+  static String checkIn(String bookingId) => '/bookings/$bookingId/check-in';
+  static String customerQueue(String bookingId) => '/bookings/$bookingId/queue';
 
   // Payments
   static String paymentRefresh(String paymentId) =>
