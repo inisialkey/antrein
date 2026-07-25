@@ -1130,6 +1130,7 @@ confirmed → cancelled
 confirmed → no_show
 checked_in → waiting
 waiting → called
+waiting → no_show
 called → in_service
 called → skipped
 called → no_show
