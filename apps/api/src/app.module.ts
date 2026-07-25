@@ -8,6 +8,7 @@ import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
 import { OutletsModule } from './modules/outlets/outlets.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     BusinessesModule,
+    BookingsModule,
     OutletsModule,
     SchedulesModule,
     ServicesModule,

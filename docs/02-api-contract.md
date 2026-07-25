@@ -3122,6 +3122,54 @@ Response `200`:
 
 ---
 
+## 68.1. Cancel Business Booking
+
+> Added per ADR 0040 (business-initiated cancellation is a separate endpoint from customer cancellation).
+
+```http
+POST /businesses/{businessId}/bookings/{bookingId}/cancel
+```
+
+Authorization:
+
+```text
+booking.manage
+```
+
+Idempotency:
+
+```text
+Required
+```
+
+Request:
+
+```json
+{
+  "reasonCode": "business_unavailable",
+  "reason": "Staff member is ill; we cannot honor the appointment."
+}
+```
+
+`reasonCode` and `reason` are required.
+
+Behavior (ADR 0040):
+
+- Customer receives a full refund of net paid amount regardless of timing thresholds.
+- Audit record is required.
+- Customer notification is required.
+
+Response `200` mirrors the customer cancellation response shape.
+
+Errors:
+
+- `BOOKING_NOT_FOUND`
+- `BOOKING_CANNOT_BE_CANCELLED`
+- `BOOKING_ALREADY_CANCELLED`
+- `BOOKING_ALREADY_COMPLETED`
+
+---
+
 # Part X — Payment APIs
 
 ## 69. Payment Resource
@@ -5542,6 +5590,7 @@ GET    /businesses/{businessId}/bookings
 GET    /businesses/{businessId}/bookings/{bookingId}
 POST   /businesses/{businessId}/walk-ins
 POST   /businesses/{businessId}/bookings/{bookingId}/no-show
+POST   /businesses/{businessId}/bookings/{bookingId}/cancel
 POST   /businesses/{businessId}/bookings/{bookingId}/payments/pay-at-location/confirm
 ```
 
