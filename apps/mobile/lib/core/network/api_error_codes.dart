@@ -44,6 +44,15 @@ abstract final class ApiErrorCodes {
   static const String queueEntryNotFound = 'QUEUE_ENTRY_NOT_FOUND';
   static const String forbiddenQueueResource = 'FORBIDDEN_QUEUE_RESOURCE';
 
+  // Staff queue commands (api-contract §122 — mirrors queue/domain/queue.errors.ts)
+  static const String queueVersionConflict = 'QUEUE_VERSION_CONFLICT';
+  static const String queueHasCalledEntry = 'QUEUE_HAS_CALLED_ENTRY';
+  static const String staffNotAvailable = 'STAFF_NOT_AVAILABLE';
+  static const String queueEntryNotWaiting = 'QUEUE_ENTRY_NOT_WAITING';
+  static const String queueEntryNotCalled = 'QUEUE_ENTRY_NOT_CALLED';
+  static const String queueEntryNotInService = 'QUEUE_ENTRY_NOT_IN_SERVICE';
+  static const String queueEntryNotSkipped = 'QUEUE_ENTRY_NOT_SKIPPED';
+
   /// Access-token 401s that should trigger a transparent refresh + retry.
   /// (The API returns `_INVALID` for both malformed and expired access tokens.)
   static const Set<String> refreshable = {

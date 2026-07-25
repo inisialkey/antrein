@@ -31,6 +31,15 @@ abstract final class ApiEndpoints {
   static String checkIn(String bookingId) => '/bookings/$bookingId/check-in';
   static String customerQueue(String bookingId) => '/bookings/$bookingId/queue';
 
+  // Business queue (staff — contract §82–§90)
+  static String outletQueue(String businessId, String outletId) =>
+      '/businesses/$businessId/outlets/$outletId/queue';
+  static String queueCommand(
+    String businessId,
+    String queueEntryId,
+    String action,
+  ) => '/businesses/$businessId/queue/$queueEntryId/$action';
+
   // Payments
   static String paymentRefresh(String paymentId) =>
       '/payments/$paymentId/refresh';

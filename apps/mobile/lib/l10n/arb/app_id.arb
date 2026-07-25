@@ -148,5 +148,24 @@
   "checkInTooLate": "Waktu check-in sudah lewat.",
   "checkInAlreadyIn": "Anda sudah berada di antrean.",
   "checkInQueueClosed": "Antrean outlet sedang tutup.",
-  "checkInFailed": "Check-in gagal. Silakan coba lagi."
+  "checkInFailed": "Check-in gagal. Silakan coba lagi.",
+
+  "boardNowServing": "Sedang dilayani",
+  "boardWaitingCount": "Menunggu ({count})",
+  "boardSkippedCount": "Dilewati ({count})",
+  "boardNoneWaiting": "Tidak ada yang menunggu.",
+  "boardEmpty": "Belum ada antrean.",
+  "boardLoadFailed": "Gagal memuat antrean.",
+  "boardClosed": "Outlet ini sedang tutup.",
+  "boardGuest": "Tamu",
+  "boardUnassigned": "Barber mana saja",
+  "boardActionFailed": "Tindakan gagal. Silakan coba lagi.",
+  "boardVersionConflict": "Antrean baru saja berubah — menampilkan versi terbaru.",
+  "cmdCall": "Panggil",
+  "cmdRecall": "Panggil ulang",
+  "cmdSkip": "Lewati",
+  "cmdReturn": "Kembalikan",
+  "cmdStart": "Mulai",
+  "cmdComplete": "Selesai",
+  "cmdNoShow": "Tidak hadir"
 }
