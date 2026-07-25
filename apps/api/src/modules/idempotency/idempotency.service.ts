@@ -22,6 +22,12 @@ export interface IdempotentExecuteOptions<T> {
   /** Request body + route params relevant to the action (contract §23.4). */
   payload: unknown;
   retentionHours?: number;
+  /**
+   * Error codes that must NOT be replayed from the store (e.g. provider
+   * outage): the claim is dropped so the same key can retry the operation.
+   * The run() itself must make such a retry safe (ADR 0040).
+   */
+  transientErrorCodes?: string[];
   run: () => Promise<T>;
   resourceOf?: (result: T) => { type: string; id: string };
 }
@@ -130,7 +136,10 @@ export class IdempotencyService {
       });
       return result;
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (
+        error instanceof ApiError &&
+        !opts.transientErrorCodes?.includes((error.getResponse() as { code?: string }).code ?? '')
+      ) {
         const response = error.getResponse() as { code?: string; message?: string };
         await this.prisma.idempotencyKey.update({
           where: { id: rowId },

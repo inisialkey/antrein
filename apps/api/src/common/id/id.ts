@@ -21,6 +21,7 @@ export const ID_PREFIXES = [
   'pay',
   'evt',
   'ref',
+  'rfe',
   'que',
   'ntf',
   'rev',

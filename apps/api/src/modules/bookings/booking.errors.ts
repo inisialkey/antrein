@@ -126,3 +126,48 @@ export function paymentAmountMismatch(expectedAmount: number): ApiError {
 export function paymentCurrencyMismatch(): ApiError {
   return new ApiError(409, 'PAYMENT_CURRENCY_MISMATCH', 'The submitted currency is not supported.');
 }
+
+export function paymentStatusRefreshRateLimited(): ApiError {
+  return new ApiError(
+    429,
+    'PAYMENT_STATUS_REFRESH_RATE_LIMITED',
+    'Payment status was refreshed too recently. Please wait a moment.',
+  );
+}
+
+export function paymentNotRefundable(): ApiError {
+  return new ApiError(422, 'PAYMENT_NOT_REFUNDABLE', 'This payment cannot be refunded.');
+}
+
+export function refundNotAllowed(): ApiError {
+  return new ApiError(422, 'REFUND_NOT_ALLOWED', 'A refund is not allowed for this payment.');
+}
+
+export function refundAlreadyPending(): ApiError {
+  return new ApiError(
+    409,
+    'REFUND_ALREADY_PENDING',
+    'A refund is already pending for this payment.',
+  );
+}
+
+export function refundAmountExceedsPaidAmount(availableAmount: number): ApiError {
+  return new ApiError(
+    422,
+    'REFUND_AMOUNT_EXCEEDS_PAID_AMOUNT',
+    'The requested refund exceeds the refundable amount.',
+    { availableAmount },
+  );
+}
+
+export function refundNotFound(): ApiError {
+  return new ApiError(404, 'REFUND_NOT_FOUND', 'Refund was not found.');
+}
+
+export function refundProviderUnavailable(): ApiError {
+  return new ApiError(
+    503,
+    'REFUND_PROVIDER_UNAVAILABLE',
+    'Refund processing is temporarily unavailable. Please try again later.',
+  );
+}

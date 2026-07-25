@@ -903,6 +903,61 @@
         ]
       }
     },
+    "/api/v1/businesses/{businessId}/payments/{paymentId}/refunds": {
+      "post": {
+        "operationId": "BusinessBookingsController_requestRefund",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request refund (contract §74)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
     "/api/v1/payments/{paymentId}": {
       "get": {
         "operationId": "PaymentsController_get",
@@ -927,6 +982,64 @@
           }
         ],
         "summary": "Get payment (contract §71)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/{paymentId}/refresh": {
+      "post": {
+        "operationId": "PaymentsController_refresh",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Refresh payment status from provider (contract §72)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/refunds/{refundId}": {
+      "get": {
+        "operationId": "RefundsController_get",
+        "parameters": [
+          {
+            "name": "refundId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get refund (contract §75)",
         "tags": [
           "payments"
         ]
@@ -2160,6 +2273,26 @@
         "required": [
           "amount",
           "method"
+        ]
+      },
+      "RequestRefundDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "reasonCode": {
+            "type": "string",
+            "example": "booking_cancelled"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer cancelled within full-refund window."
+          }
+        },
+        "required": [
+          "amount",
+          "reasonCode"
         ]
       },
       "UpdateOutletDto": {
