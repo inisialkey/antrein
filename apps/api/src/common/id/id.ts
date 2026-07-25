@@ -23,6 +23,8 @@ export const ID_PREFIXES = [
   'ref',
   'rfe',
   'que',
+  'qsh',
+  'qre',
   'ntf',
   'rev',
   'fil',

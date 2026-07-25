@@ -3714,6 +3714,8 @@ Response `200`:
 
 Business response may include customer names because staff requires operational identification.
 
+Each snapshot entry also carries its per-entry `version`, so staff commands (§83–§89) can supply `expectedVersion` for optimistic concurrency (realtime-queue §20). No phone numbers appear in the staff snapshot (ADR 0041).
+
 ---
 
 ## 83. Call Queue Entry
@@ -3763,6 +3765,7 @@ Response `200`:
 Errors:
 
 - `QUEUE_ENTRY_NOT_WAITING`
+- `QUEUE_HAS_CALLED_ENTRY`
 - `QUEUE_VERSION_CONFLICT`
 - `QUEUE_ENTRY_NOT_FOUND`
 - `FORBIDDEN_QUEUE_RESOURCE`
@@ -5022,12 +5025,20 @@ QUEUE_ENTRY_NOT_FOUND
 QUEUE_ENTRY_ALREADY_EXISTS
 QUEUE_ENTRY_NOT_WAITING
 QUEUE_ENTRY_NOT_CALLED
+QUEUE_ENTRY_NOT_SKIPPED
+QUEUE_ENTRY_NOT_IN_SERVICE
 QUEUE_ENTRY_ALREADY_COMPLETED
+QUEUE_HAS_CALLED_ENTRY
 QUEUE_VERSION_CONFLICT
 QUEUE_REORDER_INVALID_ENTRIES
 QUEUE_REORDER_REASON_REQUIRED
 OUTLET_QUEUE_CLOSED
 ```
+
+`QUEUE_HAS_CALLED_ENTRY` (409) is raised when calling an entry while another is
+already `called` at the outlet — one called entry per outlet+date (ADR 0041).
+`QUEUE_ENTRY_NOT_SKIPPED` / `QUEUE_ENTRY_NOT_IN_SERVICE` (409) guard
+return-to-waiting and complete against the wrong source state.
 
 ---
 

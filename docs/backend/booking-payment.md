@@ -361,6 +361,7 @@ confirmed → cancelled
 confirmed → no_show
 checked_in → waiting
 waiting → called
+waiting → no_show
 called → skipped
 called → in_service
 called → no_show

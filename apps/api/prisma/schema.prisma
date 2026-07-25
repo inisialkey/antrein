@@ -424,6 +424,8 @@ model Booking {
   checkedInAt     DateTime? @map("checked_in_at") @db.Timestamptz(6)
   customerNotes   String?   @map("customer_notes")
   internalNotes   String?   @map("internal_notes")
+  walkInCustomerName String? @map("walk_in_customer_name")
+  walkInPhoneNumber  String? @map("walk_in_phone_number")
   paymentOption   String    @map("payment_option")
   businessDate    DateTime  @map("business_date") @db.Date
   version         Int       @default(1)
@@ -640,4 +642,73 @@ model ClosedDate {
   @@unique([outletId, closedDate], map: "closed_dates_outlet_date_uq")
   @@index([closedDate], map: "closed_dates_date_idx")
   @@map("closed_dates")
+}
+
+// Queue models (database-design §37–§41). Plain scalar FKs (no Prisma relations):
+// the migration owns referential integrity; queue mutations query by explicit id.
+model QueueCounter {
+  outletId     String   @map("outlet_id")
+  businessDate DateTime @map("business_date") @db.Date
+  lastNumber   Int      @default(0) @map("last_number")
+  version      Int      @default(1)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([outletId, businessDate])
+  @@map("queue_counters")
+}
+
+model QueueEntry {
+  id               String    @id
+  bookingId        String    @unique(map: "queue_entries_booking_uq") @map("booking_id")
+  businessId       String    @map("business_id")
+  outletId         String    @map("outlet_id")
+  staffId          String?   @map("staff_id")
+  businessDate     DateTime  @map("business_date") @db.Date
+  queueNumber      Int       @map("queue_number")
+  displayNumber    String    @map("display_number")
+  status           String
+  sortOrder        Int       @map("sort_order")
+  checkedInAt      DateTime  @map("checked_in_at") @db.Timestamptz(6)
+  calledAt         DateTime? @map("called_at") @db.Timestamptz(6)
+  lastRecalledAt   DateTime? @map("last_recalled_at") @db.Timestamptz(6)
+  recallCount      Int       @default(0) @map("recall_count")
+  serviceStartedAt DateTime? @map("service_started_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  noShowAt         DateTime? @map("no_show_at") @db.Timestamptz(6)
+  cancelledAt      DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("queue_entries")
+}
+
+model QueueStatusHistory {
+  id           String   @id
+  queueEntryId String   @map("queue_entry_id")
+  fromStatus   String?  @map("from_status")
+  toStatus     String   @map("to_status")
+  actorUserId  String?  @map("actor_user_id")
+  actorType    String   @map("actor_type")
+  reason       String?
+  metadata     Json     @default("{}")
+  requestId    String?  @map("request_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("queue_status_history")
+}
+
+model QueueReorder {
+  id            String   @id
+  businessId    String   @map("business_id")
+  outletId      String   @map("outlet_id")
+  businessDate  DateTime @map("business_date") @db.Date
+  actorUserId   String   @map("actor_user_id")
+  previousOrder Json     @map("previous_order")
+  newOrder      Json     @map("new_order")
+  reason        String
+  requestId     String?  @map("request_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("queue_reorders")
 }

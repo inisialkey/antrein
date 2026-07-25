@@ -42,7 +42,9 @@ const ALLOWED_TRANSITIONS: Record<BookingStatus, readonly BookingStatus[]> = {
   pending_payment: ['confirmed', 'expired', 'cancelled'],
   confirmed: ['checked_in', 'cancelled', 'no_show'],
   checked_in: ['waiting'],
-  waiting: ['called'],
+  // waiting → no_show: a skipped queue entry (booking stays waiting) that is
+  // marked no-show (realtime-queue §29).
+  waiting: ['called', 'no_show'],
   called: ['in_service', 'no_show', 'waiting'],
   in_service: ['completed'],
   completed: [],

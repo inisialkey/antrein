@@ -12,13 +12,19 @@ import { PaymentsService } from './payments.service';
 import { RefundsController } from './refunds.controller';
 import { RefundsService } from './refunds.service';
 import { WebhooksController } from './webhooks.controller';
+import { BusinessQueueController } from './queue/business-queue.controller';
+import { QueueController } from './queue/queue.controller';
+import { QueueCommandsService } from './queue/queue-commands.service';
+import { QueueService } from './queue/queue.service';
 
 /**
- * Bookings + payments + refunds transactional slice. One module on purpose
- * (ponytail): webhook/cancel/expiration each mutate bookings AND payments in
- * one transaction, and the module-boundary rule forbids touching another
- * module's tables — a payments module would need forwardRef cycles for zero
- * isolation gain. Revisit when queue/realtime pressure justifies extraction.
+ * Bookings + payments + refunds + queue transactional slice. One module on
+ * purpose (ponytail): webhook/cancel/expiration/check-in each mutate bookings
+ * AND payments/queue in one transaction, and the module-boundary rule forbids
+ * touching another module's tables — a separate module would need forwardRef
+ * cycles (walk-in creates a booking; queue commands drive booking status) for
+ * zero isolation gain. The realtime-queue §72 `modules/queues` layout is the
+ * target for when WebSocket/outbox extraction justifies it.
  */
 @Module({
   imports: [MembershipsModule, IdempotencyModule, AuditModule],
@@ -28,6 +34,8 @@ import { WebhooksController } from './webhooks.controller';
     PaymentsController,
     RefundsController,
     WebhooksController,
+    QueueController,
+    BusinessQueueController,
   ],
   providers: [
     BookingsService,
@@ -35,6 +43,8 @@ import { WebhooksController } from './webhooks.controller';
     PaymentTransitionService,
     RefundsService,
     PaymentExpirationJob,
+    QueueService,
+    QueueCommandsService,
   ],
   exports: [BookingsService],
 })

@@ -1045,6 +1045,680 @@
         ]
       }
     },
+    "/api/v1/bookings/{bookingId}/check-in": {
+      "post": {
+        "operationId": "QueueController_checkIn",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check in a booking (contract §64)",
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/queue": {
+      "get": {
+        "operationId": "QueueController_getQueue",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get own queue state (contract §81)",
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/queue": {
+      "get": {
+        "operationId": "BusinessQueueController_snapshot",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Business date; defaults to today.",
+            "schema": {
+              "example": "2026-07-22",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "waiting",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get outlet queue snapshot (contract §82)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/walk-ins": {
+      "post": {
+        "operationId": "BusinessQueueController_walkIn",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalkInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a walk-in booking + queue entry (contract §67)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/call": {
+      "post": {
+        "operationId": "BusinessQueueController_call",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Call a queue entry (contract §83)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/recall": {
+      "post": {
+        "operationId": "BusinessQueueController_recall",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recall a called entry (contract §84)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/skip": {
+      "post": {
+        "operationId": "BusinessQueueController_skip",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipQueueEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Skip a called entry (contract §85)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/return-to-waiting": {
+      "post": {
+        "operationId": "BusinessQueueController_returnToWaiting",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Return a skipped entry to waiting (contract §86)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/start-service": {
+      "post": {
+        "operationId": "BusinessQueueController_startService",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start service (contract §87)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/complete": {
+      "post": {
+        "operationId": "BusinessQueueController_complete",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Complete service (contract §88)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/no-show": {
+      "post": {
+        "operationId": "BusinessQueueController_noShowEntry",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowQueueEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a queue entry no-show (contract §89)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/no-show": {
+      "post": {
+        "operationId": "BusinessQueueController_noShowBooking",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a booking no-show before check-in (contract §68)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/queue/reorder": {
+      "post": {
+        "operationId": "BusinessQueueController_reorder",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder the outlet queue (contract §90)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
     "/api/v1/businesses/{businessId}/outlets/{outletId}": {
       "patch": {
         "operationId": "OutletsController_update",
@@ -2293,6 +2967,209 @@
         "required": [
           "amount",
           "reasonCode"
+        ]
+      },
+      "CheckInDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "customer_app",
+              "staff_assisted",
+              "qr"
+            ],
+            "default": "customer_app"
+          }
+        }
+      },
+      "WalkInCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Walk-In Customer"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+6281234567890"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "WalkInStaffSelectionDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "specific_staff",
+              "any_available"
+            ]
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "CreateWalkInDto": {
+        "type": "object",
+        "properties": {
+          "outletId": {
+            "type": "string",
+            "example": "out_01J..."
+          },
+          "customer": {
+            "$ref": "#/components/schemas/WalkInCustomerDto"
+          },
+          "serviceId": {
+            "type": "string",
+            "example": "svc_01J..."
+          },
+          "staffSelection": {
+            "$ref": "#/components/schemas/WalkInStaffSelectionDto"
+          },
+          "paymentOption": {
+            "type": "string",
+            "enum": [
+              "pay_at_location"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "example": null
+          }
+        },
+        "required": [
+          "outletId",
+          "customer",
+          "serviceId",
+          "staffSelection",
+          "paymentOption"
+        ]
+      },
+      "QueueCommandDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "SkipQueueEntryDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer is temporarily unavailable."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "StartServiceDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "CompleteServiceDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "internalNote": {
+            "type": "string",
+            "example": "Service completed successfully."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "NoShowQueueEntryDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer did not respond after recall."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "NoShowBookingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Customer did not arrive within the allowed window."
+          }
+        }
+      },
+      "ReorderQueueDto": {
+        "type": "object",
+        "properties": {
+          "businessDate": {
+            "type": "string",
+            "example": "2026-07-22"
+          },
+          "expectedQueueVersion": {
+            "type": "number",
+            "example": 18
+          },
+          "orderedQueueEntryIds": {
+            "example": [
+              "que_01J_A",
+              "que_01J_B"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer with appointment priority arrived."
+          }
+        },
+        "required": [
+          "businessDate",
+          "expectedQueueVersion",
+          "orderedQueueEntryIds",
+          "reason"
         ]
       },
       "UpdateOutletDto": {
