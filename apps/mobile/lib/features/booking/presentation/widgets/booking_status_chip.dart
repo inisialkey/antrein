@@ -24,6 +24,8 @@ class BookingStatusChip extends StatelessWidget {
         context.appColors.success,
       ),
       BookingStatus.checkedIn => (l10n.statusCheckedIn, context.appColors.info),
+      BookingStatus.waiting => (l10n.statusWaiting, context.appColors.info),
+      BookingStatus.called => (l10n.statusCalled, context.appColors.success),
       BookingStatus.inService => (l10n.statusInService, context.appColors.info),
       BookingStatus.completed => (l10n.statusCompleted, scheme.primary),
       BookingStatus.cancelled => (l10n.statusCancelled, scheme.error),

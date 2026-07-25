@@ -7,6 +7,8 @@ enum BookingStatus {
   pendingPayment('pending_payment'),
   confirmed('confirmed'),
   checkedIn('checked_in'),
+  waiting('waiting'),
+  called('called'),
   inService('in_service'),
   completed('completed'),
   cancelled('cancelled'),

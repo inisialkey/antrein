@@ -15,6 +15,7 @@ import 'package:antrein/features/booking/presentation/pages/booking_detail_page.
 import 'package:antrein/features/booking/presentation/pages/my_bookings_page.dart';
 import 'package:antrein/features/booking/presentation/pages/slot_picker_page.dart';
 import 'package:antrein/features/business_dashboard/presentation/pages/business_home_page.dart';
+import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
 import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
 import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
@@ -96,6 +97,13 @@ class AppRouter {
         path: Routes.bookingDetail.path,
         name: Routes.bookingDetail.name,
         builder: (context, state) => BookingDetailPage(
+          bookingId: state.pathParameters['bookingId']!,
+        ),
+      ),
+      GoRoute(
+        path: Routes.customerQueue.path,
+        name: Routes.customerQueue.name,
+        builder: (context, state) => CustomerQueuePage(
           bookingId: state.pathParameters['bookingId']!,
         ),
       ),

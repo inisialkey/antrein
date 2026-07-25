@@ -35,6 +35,15 @@ abstract final class ApiErrorCodes {
   static const String paymentRefreshRateLimited =
       'PAYMENT_STATUS_REFRESH_RATE_LIMITED';
 
+  // Queue + check-in (api-contract §58/§122 — mirrors queue/domain/queue.errors.ts)
+  static const String bookingCheckInTooEarly = 'BOOKING_CHECK_IN_TOO_EARLY';
+  static const String bookingCheckInTooLate = 'BOOKING_CHECK_IN_TOO_LATE';
+  static const String bookingNotConfirmed = 'BOOKING_NOT_CONFIRMED';
+  static const String queueEntryAlreadyExists = 'QUEUE_ENTRY_ALREADY_EXISTS';
+  static const String outletQueueClosed = 'OUTLET_QUEUE_CLOSED';
+  static const String queueEntryNotFound = 'QUEUE_ENTRY_NOT_FOUND';
+  static const String forbiddenQueueResource = 'FORBIDDEN_QUEUE_RESOURCE';
+
   /// Access-token 401s that should trigger a transparent refresh + retry.
   /// (The API returns `_INVALID` for both malformed and expired access tokens.)
   static const Set<String> refreshable = {

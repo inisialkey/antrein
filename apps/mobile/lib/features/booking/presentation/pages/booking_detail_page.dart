@@ -2,14 +2,19 @@ import 'dart:async';
 
 import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/extensions/extensions.dart';
+import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/router/routes.dart';
 import 'package:antrein/core/ui/dimens.dart';
 import 'package:antrein/core/ui/widgets/widgets.dart';
+import 'package:antrein/features/booking/domain/entities/booking.dart';
 import 'package:antrein/features/booking/presentation/cubit/booking_detail_cubit.dart';
 import 'package:antrein/features/booking/presentation/widgets/booking_status_chip.dart';
+import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// Booking detail (§62): status, schedule, payment summary, cancellation, and
@@ -98,6 +103,14 @@ class _Loaded extends StatelessWidget {
           ],
         ),
         const Gap(Dimens.space16),
+        if (booking.status == BookingStatus.confirmed) ...[
+          _CheckInCard(bookingId: booking.id),
+          const Gap(Dimens.space16),
+        ],
+        if (_showsQueueLink(booking.status)) ...[
+          _ViewQueueButton(bookingId: booking.id),
+          const Gap(Dimens.space16),
+        ],
         if (booking.isAwaitingPayment) ...[
           _PendingPaymentCard(state: state),
           const Gap(Dimens.space16),
@@ -323,6 +336,119 @@ class _InfoCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    ),
+  );
+}
+
+/// Booking is in the active queue (post check-in) — offer the live queue view.
+bool _showsQueueLink(BookingStatus status) =>
+    status == BookingStatus.checkedIn ||
+    status == BookingStatus.waiting ||
+    status == BookingStatus.called ||
+    status == BookingStatus.inService;
+
+String _checkInErrorText(BuildContext context, String? code, String fallback) {
+  final l10n = context.l10n;
+  return switch (code) {
+    ApiErrorCodes.bookingCheckInTooEarly => l10n.checkInTooEarly,
+    ApiErrorCodes.bookingCheckInTooLate => l10n.checkInTooLate,
+    ApiErrorCodes.queueEntryAlreadyExists => l10n.checkInAlreadyIn,
+    ApiErrorCodes.outletQueueClosed => l10n.checkInQueueClosed,
+    _ => fallback.isEmpty ? l10n.checkInFailed : fallback,
+  };
+}
+
+/// Check-in prompt shown on a confirmed booking (§64). Self-contained CheckInCubit.
+class _CheckInCard extends StatelessWidget {
+  const _CheckInCard({required this.bookingId});
+
+  final String bookingId;
+
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => getIt<CheckInCubit>(),
+    child: _CheckInCardView(bookingId: bookingId),
+  );
+}
+
+class _CheckInCardView extends StatelessWidget {
+  const _CheckInCardView({required this.bookingId});
+
+  final String bookingId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return BlocConsumer<CheckInCubit, CheckInState>(
+      listener: (context, state) {
+        switch (state) {
+          case CheckInSuccess():
+            // Booking is now `waiting`; refresh detail and open the live queue.
+            unawaited(context.read<BookingDetailCubit>().load(bookingId));
+            unawaited(
+              context.pushNamed(
+                Routes.customerQueue.name,
+                pathParameters: {'bookingId': bookingId},
+              ),
+            );
+          case CheckInError(:final message, :final code):
+            context.showSnackBar(_checkInErrorText(context, code, message));
+          case CheckInInitial():
+          case CheckInSubmitting():
+        }
+      },
+      builder: (context, state) => Card(
+        color: context.appColors.success.withValues(alpha: 0.08),
+        child: Padding(
+          padding: EdgeInsets.all(Dimens.space16.r),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.how_to_reg_outlined,
+                    color: context.appColors.success,
+                    size: Dimens.iconMd.r,
+                  ),
+                  const Gap.horizontal(Dimens.space8),
+                  Expanded(
+                    child: Text(
+                      l10n.checkInTitle,
+                      style: context.textTheme.titleSmall,
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(Dimens.space8),
+              Text(l10n.checkInPrompt, style: context.textTheme.bodySmall),
+              const Gap(Dimens.space12),
+              AppButton(
+                label: l10n.checkInAction,
+                loading: state is CheckInSubmitting,
+                onPressed: () => context.read<CheckInCubit>().submit(bookingId),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ViewQueueButton extends StatelessWidget {
+  const _ViewQueueButton({required this.bookingId});
+
+  final String bookingId;
+
+  @override
+  Widget build(BuildContext context) => AppButton(
+    label: context.l10n.viewQueueAction,
+    onPressed: () => unawaited(
+      context.pushNamed(
+        Routes.customerQueue.name,
+        pathParameters: {'bookingId': bookingId},
       ),
     ),
   );
