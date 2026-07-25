@@ -200,5 +200,26 @@
   "checkInTooLate": "The check-in window has closed.",
   "checkInAlreadyIn": "You're already in the queue.",
   "checkInQueueClosed": "The outlet queue is closed right now.",
-  "checkInFailed": "Check-in failed. Please try again."
+  "checkInFailed": "Check-in failed. Please try again.",
+
+  "boardNowServing": "Now serving",
+  "boardWaitingCount": "Waiting ({count})",
+  "@boardWaitingCount": { "placeholders": { "count": { "type": "int" } } },
+  "boardSkippedCount": "Skipped ({count})",
+  "@boardSkippedCount": { "placeholders": { "count": { "type": "int" } } },
+  "boardNoneWaiting": "No one waiting.",
+  "boardEmpty": "No one in the queue yet.",
+  "boardLoadFailed": "Couldn't load the queue.",
+  "boardClosed": "This outlet is closed right now.",
+  "boardGuest": "Guest",
+  "boardUnassigned": "Any barber",
+  "boardActionFailed": "That action failed. Please try again.",
+  "boardVersionConflict": "The queue just changed — showing the latest.",
+  "cmdCall": "Call",
+  "cmdRecall": "Recall",
+  "cmdSkip": "Skip",
+  "cmdReturn": "Return",
+  "cmdStart": "Start",
+  "cmdComplete": "Complete",
+  "cmdNoShow": "No-show"
 }

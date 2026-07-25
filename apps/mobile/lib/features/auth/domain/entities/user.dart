@@ -1,3 +1,4 @@
+import 'package:antrein/features/auth/domain/entities/business_membership.dart';
 import 'package:antrein/features/auth/domain/entities/user_role.dart';
 import 'package:equatable/equatable.dart';
 
@@ -13,6 +14,7 @@ class User extends Equatable {
     this.phoneNumber,
     this.avatarUrl,
     this.status = 'active',
+    this.businessMemberships = const [],
   });
 
   final String id;
@@ -22,6 +24,12 @@ class User extends Equatable {
   final String? phoneNumber;
   final String? avatarUrl;
   final String status;
+  final List<BusinessMembership> businessMemberships;
+
+  /// The membership whose queue the business shell manages. MVP is one business
+  /// per user (ADR: `BUSINESS_LIMIT_REACHED`), so the first is the one.
+  BusinessMembership? get primaryMembership =>
+      businessMemberships.isEmpty ? null : businessMemberships.first;
 
   /// True when the account holds a business-side role (owner or staff) and may
   /// enter the business shell. Customer-only accounts use the customer shell.
@@ -38,5 +46,6 @@ class User extends Equatable {
     phoneNumber,
     avatarUrl,
     status,
+    businessMemberships,
   ];
 }
