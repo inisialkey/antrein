@@ -32,6 +32,10 @@ model User {
   sentInvitations        StaffInvitation[] @relation("InvitedBy")
   acceptedInvitations    StaffInvitation[] @relation("AcceptedBy")
   createdClosedDates     ClosedDate[]
+  bookings               Booking[] @relation("CustomerBookings")
+  createdBookings        Booking[] @relation("CreatedBookings")
+  bookingStatusChanges   BookingStatusHistory[] @relation("BookingStatusActor")
+  payments               Payment[] @relation("CustomerPayments")
 
   @@map("users")
 }
@@ -134,6 +138,8 @@ model Business {
   invitations StaffInvitation[]
   staff       StaffProfile[]
   services    Service[]
+  bookings    Booking[]
+  payments    Payment[]
 
   @@index([status], map: "businesses_status_idx")
   @@index([ownerUserId], map: "businesses_owner_idx")
@@ -182,6 +188,7 @@ model Outlet {
   staffAssignments StaffOutlet[]
   operatingHours   OutletOperatingHour[]
   closedDates      ClosedDate[]
+  bookings         Booking[]
 
   @@index([businessId, status], map: "outlets_business_status_idx")
   @@map("outlets")
@@ -252,6 +259,8 @@ model StaffProfile {
   outletAssignments StaffOutlet[]
   serviceLinks      StaffService[]
   schedules         StaffSchedule[]
+  bookings          Booking[]
+  reservations      BookingReservation[]
 
   @@index([businessId, status], map: "staff_profiles_business_status_idx")
   @@map("staff_profiles")
@@ -288,6 +297,7 @@ model Service {
 
   business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staffLinks StaffService[]
+  bookings   Booking[]
 
   @@index([businessId, status, sortOrder], map: "services_business_status_sort_idx")
   @@map("services")
@@ -395,6 +405,147 @@ model StaffScheduleBreak {
   schedule StaffSchedule @relation(fields: [staffScheduleId], references: [id], onDelete: Cascade)
 
   @@map("staff_schedule_breaks")
+}
+
+model Booking {
+  id              String    @id
+  bookingCode     String    @map("booking_code")
+  customerUserId  String?   @map("customer_user_id")
+  businessId      String    @map("business_id")
+  outletId        String    @map("outlet_id")
+  serviceId       String    @map("service_id")
+  staffId         String?   @map("staff_id")
+  bookingType     String    @map("booking_type")
+  status          String
+  scheduledAt     DateTime? @map("scheduled_at") @db.Timestamptz(6)
+  expectedEndsAt  DateTime? @map("expected_ends_at") @db.Timestamptz(6)
+  checkedInAt     DateTime? @map("checked_in_at") @db.Timestamptz(6)
+  customerNotes   String?   @map("customer_notes")
+  internalNotes   String?   @map("internal_notes")
+  paymentOption   String    @map("payment_option")
+  businessDate    DateTime  @map("business_date") @db.Date
+  version         Int       @default(1)
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(6)
+  noShowAt        DateTime? @map("no_show_at") @db.Timestamptz(6)
+  createdByUserId String?   @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  customer      User?                  @relation("CustomerBookings", fields: [customerUserId], references: [id])
+  createdBy     User?                  @relation("CreatedBookings", fields: [createdByUserId], references: [id])
+  business      Business               @relation(fields: [businessId], references: [id])
+  outlet        Outlet                 @relation(fields: [outletId], references: [id])
+  service       Service                @relation(fields: [serviceId], references: [id])
+  staff         StaffProfile?          @relation(fields: [staffId], references: [id])
+  snapshot      BookingSnapshot?
+  statusHistory BookingStatusHistory[]
+  reservation   BookingReservation?
+  payments      Payment[]
+
+  @@unique([businessId, bookingCode], map: "bookings_code_uq")
+  @@index([customerUserId, createdAt(sort: Desc)], map: "bookings_customer_created_idx")
+  @@index([businessId, businessDate, status], map: "bookings_business_date_idx")
+  @@index([outletId, businessDate, status], map: "bookings_outlet_date_idx")
+  @@index([status, scheduledAt], map: "bookings_status_scheduled_idx")
+  @@map("bookings")
+}
+
+model BookingSnapshot {
+  bookingId              String   @id @map("booking_id")
+  businessName           String   @map("business_name")
+  outletName             String   @map("outlet_name")
+  outletAddressFormatted String   @map("outlet_address_formatted")
+  outletTimezone         String   @map("outlet_timezone")
+  serviceName            String   @map("service_name")
+  serviceDurationMinutes Int      @map("service_duration_minutes")
+  servicePriceAmount     Int      @map("service_price_amount")
+  currency               String
+  depositType            String   @map("deposit_type")
+  depositValue           Int      @map("deposit_value")
+  requiredPaymentAmount  Int      @map("required_payment_amount")
+  staffName              String?  @map("staff_name")
+  cancellationPolicy     Json     @map("cancellation_policy")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_snapshots")
+}
+
+model BookingStatusHistory {
+  id          String   @id
+  bookingId   String   @map("booking_id")
+  fromStatus  String?  @map("from_status")
+  toStatus    String   @map("to_status")
+  actorUserId String?  @map("actor_user_id")
+  actorType   String   @map("actor_type")
+  reasonCode  String?  @map("reason_code")
+  reason      String?
+  metadata    Json     @default("{}")
+  requestId   String?  @map("request_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   User?   @relation("BookingStatusActor", fields: [actorUserId], references: [id])
+
+  @@index([bookingId, createdAt], map: "booking_status_history_booking_created_idx")
+  @@map("booking_status_history")
+}
+
+/// Overlap protection (ADR 0027). The tstzrange column + GiST exclusion
+/// constraint live in raw SQL only (Prisma cannot express them); rows are
+/// inserted with $executeRaw and read/deleted through this model.
+model BookingReservation {
+  bookingId String    @id @map("booking_id")
+  staffId   String    @map("staff_id")
+  outletId  String    @map("outlet_id")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  staff   StaffProfile @relation(fields: [staffId], references: [id])
+
+  @@index([staffId], map: "booking_reservations_staff_idx")
+  @@map("booking_reservations")
+}
+
+model BookingCodeCounter {
+  businessId   String   @map("business_id")
+  businessDate DateTime @map("business_date") @db.Date
+  lastNumber   Int      @default(0) @map("last_number")
+
+  @@id([businessId, businessDate])
+  @@map("booking_code_counters")
+}
+
+model Payment {
+  id                String    @id
+  bookingId         String    @map("booking_id")
+  businessId        String    @map("business_id")
+  customerUserId    String?   @map("customer_user_id")
+  provider          String
+  providerReference String?   @map("provider_reference")
+  paymentOption     String    @map("payment_option")
+  method            String?
+  status            String
+  amount            Int
+  currency          String    @default("IDR")
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(6)
+  paidAt            DateTime? @map("paid_at") @db.Timestamptz(6)
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking  Booking  @relation(fields: [bookingId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  customer User?    @relation("CustomerPayments", fields: [customerUserId], references: [id])
+
+  @@index([bookingId, createdAt], map: "payments_booking_created_idx")
+  @@index([businessId, status, createdAt], map: "payments_business_status_idx")
+  @@map("payments")
 }
 
 model ClosedDate {

@@ -17,6 +17,7 @@ export const ID_PREFIXES = [
   'sch',
   'cld',
   'bkg',
+  'bsh',
   'pay',
   'evt',
   'ref',

@@ -73,6 +73,42 @@ export function operatingDaysOf(rows: OutletOperatingHour[]): Record<string, unk
   });
 }
 
+/**
+ * Availability minute-ranges for one staff member on one weekday, after outlet
+ * assignment, schedule and break rules. Shared with the bookings module, which
+ * revalidates the same rules inside the booking transaction.
+ */
+export function staffAvailabilityRangesOf(
+  staff: {
+    outletAssignments: Array<{ outletId: string }>;
+    schedules: Array<StaffSchedule & { breaks: StaffScheduleBreak[] }>;
+  },
+  outletId: string,
+  day: number,
+  outletPeriods: MinuteRange[],
+): MinuteRange[] {
+  // Staff restricted to other outlets never covers slots here.
+  const assignments = staff.outletAssignments.map((a) => a.outletId);
+  if (assignments.length > 0 && !assignments.includes(outletId)) return [];
+  // ponytail: staff with no schedule rows at all follows outlet hours, so
+  // availability works right after staff onboarding; configured schedules are strict.
+  if (staff.schedules.length === 0) return outletPeriods;
+  const dayRows = staff.schedules.filter((r) => r.dayOfWeek === day && r.isAvailable);
+  const periods = dayRows
+    .filter((r) => r.startsAt && r.endsAt)
+    .map((r) => ({
+      start: toMinutes(dbTimeToString(r.startsAt as Date)),
+      end: toMinutes(dbTimeToString(r.endsAt as Date)),
+    }));
+  const cuts = dayRows
+    .flatMap((r) => r.breaks)
+    .map((b) => ({
+      start: toMinutes(dbTimeToString(b.startsAt)),
+      end: toMinutes(dbTimeToString(b.endsAt)),
+    }));
+  return subtractRanges(periods, cuts);
+}
+
 export function staffDaysOf(
   rows: Array<StaffSchedule & { breaks: StaffScheduleBreak[] }>,
 ): Record<string, unknown>[] {
@@ -305,7 +341,7 @@ export class SchedulesService {
         date: query.date,
         durationMinutes: service.durationMinutes,
         outletPeriods,
-        staffAvailability: this.staffAvailabilityOf(staff, outlet.id, day, outletPeriods),
+        staffAvailability: staffAvailabilityRangesOf(staff, outlet.id, day, outletPeriods),
         leadCutoff:
           query.date === today
             ? new Date(now.getTime() + (policy?.minimumLeadMinutes ?? 60) * 60_000)
@@ -323,38 +359,6 @@ export class SchedulesService {
       slots,
       generatedAt: now.toISOString(),
     };
-  }
-
-  private staffAvailabilityOf(
-    staff: {
-      outletAssignments: Array<{ outletId: string }>;
-      schedules: Array<StaffSchedule & { breaks: StaffScheduleBreak[] }>;
-    },
-    outletId: string,
-    day: number,
-    outletPeriods: MinuteRange[],
-  ): MinuteRange[] {
-    // Staff restricted to other outlets never covers slots here (informational —
-    // the booking transaction re-enforces this in M6).
-    const assignments = staff.outletAssignments.map((a) => a.outletId);
-    if (assignments.length > 0 && !assignments.includes(outletId)) return [];
-    // ponytail: staff with no schedule rows at all follows outlet hours, so
-    // availability works right after staff onboarding; configured schedules are strict.
-    if (staff.schedules.length === 0) return outletPeriods;
-    const dayRows = staff.schedules.filter((r) => r.dayOfWeek === day && r.isAvailable);
-    const periods = dayRows
-      .filter((r) => r.startsAt && r.endsAt)
-      .map((r) => ({
-        start: toMinutes(dbTimeToString(r.startsAt as Date)),
-        end: toMinutes(dbTimeToString(r.endsAt as Date)),
-      }));
-    const cuts = dayRows
-      .flatMap((r) => r.breaks)
-      .map((b) => ({
-        start: toMinutes(dbTimeToString(b.startsAt)),
-        end: toMinutes(dbTimeToString(b.endsAt)),
-      }));
-    return subtractRanges(periods, cuts);
   }
 
   private operatingRowsOf(

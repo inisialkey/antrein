@@ -394,6 +394,544 @@
         ]
       }
     },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "BookingsController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a booking (contract §60)",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "get": {
+        "operationId": "BookingsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_payment",
+                "confirmed",
+                "checked_in",
+                "waiting",
+                "called",
+                "in_service",
+                "completed",
+                "cancelled",
+                "expired",
+                "no_show"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List own bookings",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}": {
+      "get": {
+        "operationId": "BookingsController_get",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get own booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "BookingsController_cancel",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel own booking (contract §63)",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/payments": {
+      "get": {
+        "operationId": "BookingsController_listPayments",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List payments of a booking (contract §70)",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings": {
+      "get": {
+        "operationId": "BusinessBookingsController_list",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_payment",
+                "confirmed",
+                "checked_in",
+                "waiting",
+                "called",
+                "in_service",
+                "completed",
+                "cancelled",
+                "expired",
+                "no_show"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "out_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "stf_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Exact business date.",
+            "schema": {
+              "example": "2026-07-26",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "walk_in"
+              ]
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "expired",
+                "cancelled",
+                "refund_pending",
+                "partially_refunded",
+                "refunded"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List business bookings (contract §65)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}": {
+      "get": {
+        "operationId": "BusinessBookingsController_get",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get business booking (contract §66)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "BusinessBookingsController_cancel",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel booking as business (ADR 0040, contract §68.1)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/payments/pay-at-location/confirm": {
+      "post": {
+        "operationId": "BusinessBookingsController_confirmPayAtLocation",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPayAtLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm pay-at-location payment (contract §73)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/payments/{paymentId}": {
+      "get": {
+        "operationId": "PaymentsController_get",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get payment (contract §71)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
     "/api/v1/businesses/{businessId}/outlets/{outletId}": {
       "patch": {
         "operationId": "OutletsController_update",
@@ -1488,6 +2026,142 @@
           }
         }
       },
+      "StaffSelectionDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "specific_staff",
+              "any_available"
+            ]
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "example": "biz_01J..."
+          },
+          "outletId": {
+            "type": "string",
+            "example": "out_01J..."
+          },
+          "serviceId": {
+            "type": "string",
+            "example": "svc_01J..."
+          },
+          "staffSelection": {
+            "$ref": "#/components/schemas/StaffSelectionDto"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "example": "2026-07-26T10:00:00+07:00"
+          },
+          "paymentOption": {
+            "type": "string",
+            "enum": [
+              "pay_at_location",
+              "full_payment",
+              "deposit"
+            ]
+          },
+          "customerNotes": {
+            "type": "string",
+            "example": "Please use scissors only."
+          }
+        },
+        "required": [
+          "businessId",
+          "outletId",
+          "serviceId",
+          "staffSelection",
+          "scheduledAt",
+          "paymentOption"
+        ]
+      },
+      "CancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "example": "customer_changed_plan"
+          },
+          "reason": {
+            "type": "string",
+            "example": "I am no longer available."
+          }
+        }
+      },
+      "BusinessCancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "example": "business_unavailable"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Staff member is ill."
+          }
+        },
+        "required": [
+          "reasonCode",
+          "reason"
+        ]
+      },
+      "MoneyDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 50000
+          },
+          "currency": {
+            "type": "string",
+            "example": "IDR"
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
+      },
+      "ConfirmPayAtLocationDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "qris_manual",
+              "bank_transfer_manual",
+              "card_terminal",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "example": "Paid at front desk."
+          }
+        },
+        "required": [
+          "amount",
+          "method"
+        ]
+      },
       "UpdateOutletDto": {
         "type": "object",
         "properties": {
@@ -1662,23 +2336,6 @@
         "required": [
           "timezone",
           "days"
-        ]
-      },
-      "MoneyDto": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "number",
-            "example": 50000
-          },
-          "currency": {
-            "type": "string",
-            "example": "IDR"
-          }
-        },
-        "required": [
-          "amount",
-          "currency"
         ]
       },
       "DepositDto": {

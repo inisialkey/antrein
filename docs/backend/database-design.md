@@ -1304,8 +1304,11 @@ check (
 Unique indexes:
 
 ```sql
+-- Per-business uniqueness: booking codes are per-business daily sequences with
+-- a shared ANT- prefix (ADR 0038), so identical codes across businesses are
+-- expected. Codes are display-only and never authorization.
 create unique index bookings_code_uq
-on bookings(booking_code);
+on bookings(business_id, booking_code);
 ```
 
 Core indexes:
