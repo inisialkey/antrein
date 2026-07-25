@@ -14,6 +14,12 @@ enum Routes {
   customerNotifications('/notifications'),
   customerProfile('/profile'),
 
+  // Booking flow (full-screen, outside the shell)
+  businessDetail('/business/:businessId'),
+  bookingSlots('/book/slots'),
+  bookingConfirm('/book/confirm'),
+  bookingDetail('/booking/:bookingId'),
+
   // Business shell (stub until M4)
   businessHome('/business');
 
