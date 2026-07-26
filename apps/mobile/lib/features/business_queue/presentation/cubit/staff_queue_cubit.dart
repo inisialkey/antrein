@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/realtime/realtime_client.dart';
+import 'package:antrein/core/realtime/realtime_event.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_board.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_board_entry.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_command.dart';
@@ -21,11 +23,14 @@ part 'staff_queue_cubit.freezed.dart';
 /// grows past a pass-through.
 @injectable
 class StaffQueueCubit extends Cubit<StaffQueueState> {
-  StaffQueueCubit(this._repo)
+  StaffQueueCubit(this._repo, this._realtime)
     : super(const StaffQueueState(status: BoardStatus.initial));
 
   final BusinessQueueRepository _repo;
+  final RealtimeClient _realtime;
   Timer? _pollTimer;
+  StreamSubscription<RealtimeEvent>? _eventSub;
+  StreamSubscription<void>? _connSub;
   String? _businessId;
   String? _outletId;
 
@@ -47,6 +52,7 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
         _outletId = outletId;
         await _fetch(silent: false);
         _startPolling();
+        _startRealtime();
       },
     );
   }
@@ -135,11 +141,45 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
     );
   }
 
+  /// Live board updates over WebSocket (§108). A `queue.snapshot.updated.v1`
+  /// event is a hint: it triggers an authoritative REST refetch. Rooms are lost
+  /// on disconnect, so every (re)connect re-joins the outlet room and resyncs.
+  void _startRealtime() {
+    unawaited(_eventSub?.cancel());
+    unawaited(_connSub?.cancel());
+    _eventSub = _realtime.events
+        .where(
+          (e) =>
+              e.type == 'queue.snapshot.updated.v1' &&
+              e.data['outletId'] == _outletId,
+        )
+        .listen((_) {
+          if (state.actingEntryId == null) unawaited(refresh());
+        });
+    _connSub = _realtime.connections.listen((_) {
+      _subscribe();
+      unawaited(refresh());
+    });
+    if (_realtime.isConnected) {
+      _subscribe();
+    } else {
+      unawaited(_realtime.connect());
+    }
+  }
+
+  void _subscribe() {
+    final outletId = _outletId;
+    final businessDate = state.board?.businessDate;
+    if (outletId != null && businessDate != null) {
+      _realtime.subscribeOutletQueue(outletId, businessDate);
+    }
+  }
+
   void _startPolling() {
     _pollTimer?.cancel();
-    // ponytail: 12s poll stands in for the M9 realtime queue feed; swap for the
-    // WebSocket `/realtime` subscription when it lands.
-    _pollTimer = Timer.periodic(const Duration(seconds: 12), (_) {
+    // ponytail: slow safety poll behind the WebSocket feed — recovers a snapshot
+    // event dropped between reconnects (§113). WS is the primary refresh path.
+    _pollTimer = Timer.periodic(const Duration(seconds: 45), (_) {
       // don't fight an in-flight command mid-apply
       if (state.actingEntryId != null) return;
       unawaited(refresh());
@@ -155,6 +195,8 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
   @override
   Future<void> close() {
     _pollTimer?.cancel();
+    unawaited(_eventSub?.cancel());
+    unawaited(_connSub?.cancel());
     return super.close();
   }
 }

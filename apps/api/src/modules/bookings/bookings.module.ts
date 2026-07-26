@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { RealtimeModule } from '../../infrastructure/realtime/realtime.module';
 import { AuditModule } from '../audit/audit.module';
 import { IdempotencyModule } from '../idempotency/idempotency.module';
 import { MembershipsModule } from '../memberships/memberships.module';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { BusinessBookingsController } from './business-bookings.controller';
+import { OutboxDispatcherJob } from './outbox-dispatcher.job';
 import { PaymentExpirationJob } from './payment-expiration.job';
 import { PaymentTransitionService } from './payment-transition.service';
 import { PaymentsController } from './payments.controller';
@@ -27,7 +29,7 @@ import { QueueService } from './queue/queue.service';
  * target for when WebSocket/outbox extraction justifies it.
  */
 @Module({
-  imports: [MembershipsModule, IdempotencyModule, AuditModule],
+  imports: [MembershipsModule, IdempotencyModule, AuditModule, RealtimeModule],
   controllers: [
     BookingsController,
     BusinessBookingsController,
@@ -43,6 +45,7 @@ import { QueueService } from './queue/queue.service';
     PaymentTransitionService,
     RefundsService,
     PaymentExpirationJob,
+    OutboxDispatcherJob,
     QueueService,
     QueueCommandsService,
   ],
