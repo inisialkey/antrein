@@ -19,6 +19,7 @@ import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
 import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
 import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
+import 'package:antrein/features/reports/reports.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injectable/injectable.dart';
@@ -72,6 +73,14 @@ class AppRouter {
         path: Routes.businessHome.path,
         name: Routes.businessHome.name,
         builder: (context, state) => const BusinessHomePage(),
+      ),
+      GoRoute(
+        path: Routes.businessReports.path,
+        name: Routes.businessReports.name,
+        builder: (context, state) => DailySummaryPage(
+          businessId: state.pathParameters['businessId']!,
+          outletId: state.pathParameters['outletId']!,
+        ),
       ),
       // Booking flow — full-screen pages pushed over the customer shell.
       GoRoute(

@@ -181,5 +181,24 @@
   "reorderReasonTitle": "Alasan pengurutan ulang",
   "reorderReasonHint": "Mengapa urutan berubah?",
   "reorderSave": "Simpan urutan",
-  "commonCancel": "Batal"
+  "commonCancel": "Batal",
+
+  "reviewCardTitle": "Beri ulasan",
+  "reviewCommentHint": "Ceritakan pengalaman Anda (opsional)",
+  "reviewSubmit": "Kirim ulasan",
+  "reviewThanks": "Terima kasih atas ulasan Anda!",
+  "reviewAlreadyExists": "Booking ini sudah diulas.",
+  "reviewFailed": "Gagal mengirim ulasan. Silakan coba lagi.",
+
+  "reportsTitle": "Laporan Harian",
+  "reportsOpen": "Laporan harian",
+  "reportsLoadFailed": "Gagal memuat laporan.",
+  "reportTotalBookings": "Total booking",
+  "reportCompleted": "Selesai",
+  "reportCancelled": "Dibatalkan",
+  "reportNoShow": "Tidak hadir",
+  "reportAvgWait": "Rata-rata tunggu",
+  "reportGrossPaid": "Total dibayar",
+  "reportPending": "Menunggu pembayaran",
+  "reportRefunded": "Dikembalikan"
 }

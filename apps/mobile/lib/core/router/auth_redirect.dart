@@ -35,7 +35,10 @@ String? resolveAuthRedirect({
         : Routes.customerHome.path;
   }
 
-  if (location == Routes.businessHome.path && !hasBusinessAccess) {
+  final onBusinessShell =
+      location == Routes.businessHome.path ||
+      location.startsWith('${Routes.businessHome.path}/');
+  if (onBusinessShell && !hasBusinessAccess) {
     return Routes.customerHome.path;
   }
 

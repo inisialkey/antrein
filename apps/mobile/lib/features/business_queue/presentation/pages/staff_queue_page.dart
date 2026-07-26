@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/extensions/extensions.dart';
+import 'package:antrein/core/router/routes.dart';
 import 'package:antrein/core/ui/dimens.dart';
 import 'package:antrein/core/ui/widgets/widgets.dart';
 import 'package:antrein/features/auth/presentation/cubit/auth_cubit.dart';
@@ -15,6 +16,7 @@ import 'package:antrein/l10n/gen/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 /// Staff queue board (contract §67, §82–§90). Resolves the outlet and hosts the
 /// live board; command buttons and the walk-in FAB appear only when [canManage]
@@ -25,6 +27,7 @@ class StaffQueuePage extends StatelessWidget {
     required this.membershipOutletIds,
     required this.canManage,
     required this.canReorder,
+    this.canViewReports = false,
     this.businessName,
     super.key,
   });
@@ -33,6 +36,7 @@ class StaffQueuePage extends StatelessWidget {
   final List<String> membershipOutletIds;
   final bool canManage;
   final bool canReorder;
+  final bool canViewReports;
   final String? businessName;
 
   @override
@@ -48,8 +52,10 @@ class StaffQueuePage extends StatelessWidget {
       return cubit;
     },
     child: _StaffQueueView(
+      businessId: businessId,
       canManage: canManage,
       canReorder: canReorder,
+      canViewReports: canViewReports,
       businessName: businessName,
     ),
   );
@@ -57,13 +63,17 @@ class StaffQueuePage extends StatelessWidget {
 
 class _StaffQueueView extends StatelessWidget {
   const _StaffQueueView({
+    required this.businessId,
     required this.canManage,
     required this.canReorder,
+    required this.canViewReports,
     this.businessName,
   });
 
+  final String businessId;
   final bool canManage;
   final bool canReorder;
+  final bool canViewReports;
   final String? businessName;
 
   @override
@@ -73,6 +83,30 @@ class _StaffQueueView extends StatelessWidget {
       appBar: AppBar(
         title: Text(businessName ?? l10n.queueTitle),
         actions: [
+          if (canViewReports)
+            Builder(
+              builder: (context) {
+                // Report needs the resolved outlet — enabled once the board is.
+                final outletId = context.select<StaffQueueCubit, String?>(
+                  (cubit) => cubit.state.board?.outletId,
+                );
+                return IconButton(
+                  icon: const Icon(Icons.insert_chart_outlined),
+                  tooltip: l10n.reportsOpen,
+                  onPressed: outletId == null
+                      ? null
+                      : () => unawaited(
+                          context.pushNamed(
+                            Routes.businessReports.name,
+                            pathParameters: {
+                              'businessId': businessId,
+                              'outletId': outletId,
+                            },
+                          ),
+                        ),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: l10n.queueRefresh,
