@@ -167,5 +167,19 @@
   "cmdReturn": "Kembalikan",
   "cmdStart": "Mulai",
   "cmdComplete": "Selesai",
-  "cmdNoShow": "Tidak hadir"
+  "cmdNoShow": "Tidak hadir",
+
+  "walkInAdd": "Tambah walk-in",
+  "walkInTitle": "Walk-in baru",
+  "walkInNameLabel": "Nama pelanggan",
+  "walkInPhoneLabel": "Nomor HP (opsional)",
+  "walkInServiceLabel": "Layanan",
+  "walkInSubmit": "Tambahkan ke antrean",
+  "walkInCreated": "Walk-in ditambahkan: {number}",
+  "@walkInCreated": { "placeholders": { "number": { "type": "String" } } },
+  "walkInServicesFailed": "Gagal memuat layanan.",
+  "reorderReasonTitle": "Alasan pengurutan ulang",
+  "reorderReasonHint": "Mengapa urutan berubah?",
+  "reorderSave": "Simpan urutan",
+  "commonCancel": "Batal"
 }

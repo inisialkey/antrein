@@ -41,6 +41,7 @@ class BusinessHomePage extends StatelessWidget {
       businessId: membership.businessId,
       membershipOutletIds: membership.outletIds,
       canManage: membership.can('queue.manage'),
+      canReorder: membership.can('queue.reorder'),
       businessName: membership.businessName,
     );
   }

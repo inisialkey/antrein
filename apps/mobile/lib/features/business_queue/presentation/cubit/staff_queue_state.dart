@@ -21,5 +21,18 @@ sealed class StaffQueueState with _$StaffQueueState {
 
     /// Load-failure message for the whole board.
     String? message,
+
+    /// Service catalog for the walk-in form; null until first loaded (§67).
+    List<ServiceItem>? walkInServices,
+    @Default(false) bool isLoadingServices,
+    @Default(false) bool isCreatingWalkIn,
+
+    /// Display number of the last created walk-in — transient snackbar signal.
+    String? walkInCreatedNumber,
+
+    /// The waiting list was moved locally and awaits a reorder reason (§90).
+    /// Background refreshes are suppressed so they can't clobber the preview.
+    @Default(false) bool hasPendingReorder,
+    @Default(false) bool isReordering,
   }) = _StaffQueueState;
 }
