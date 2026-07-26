@@ -33,6 +33,7 @@ describe('Scheduling endpoints (integration)', () => {
   const tomorrow = addDays(today, 1);
   const tomorrowDay = DAY_NAMES[jakartaDayOfWeek(tomorrow)];
 
+  const businessName = `Schedule Barber ${randomUUID().slice(0, 8)}`;
   let ownerToken: string;
   let businessId: string;
   let outletId: string;
@@ -97,7 +98,7 @@ describe('Scheduling endpoints (integration)', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .set('Idempotency-Key', idem())
       .send({
-        name: `Schedule Barber ${randomUUID().slice(0, 8)}`,
+        name: businessName,
         primaryOutlet: { name: 'Main Outlet', address: { formatted: 'Jl. Example No. 10' } },
       })
       .expect(201);
@@ -261,7 +262,11 @@ describe('Scheduling endpoints (integration)', () => {
       const details = await http().get(`/api/v1/businesses/${businessId}`).expect(200);
       expect(details.body.data.outlets[0].operatingHours).toHaveLength(7);
 
-      const list = await http().get('/api/v1/businesses?limit=100').expect(200);
+      // q narrows the list: the shared test DB accumulates businesses across
+      // runs, so an unfiltered page can push this one past the 100-row cap.
+      const list = await http()
+        .get(`/api/v1/businesses?q=${encodeURIComponent(businessName)}&limit=100`)
+        .expect(200);
       const summary = list.body.data.items.find((b: { id: string }) => b.id === businessId);
       expect(summary.primaryOutlet.isOpenNow).toBe(true);
     });

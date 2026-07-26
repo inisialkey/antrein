@@ -16,6 +16,8 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OutletsModule } from './modules/outlets/outlets.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { ServicesModule } from './modules/services/services.module';
 import { StaffModule } from './modules/staff/staff.module';
@@ -38,6 +40,8 @@ import { UsersModule } from './modules/users/users.module';
     SchedulesModule,
     ServicesModule,
     StaffModule,
+    ReviewsModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
