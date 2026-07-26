@@ -8,6 +8,8 @@ import 'package:antrein/features/business_queue/domain/entities/queue_board.dart
 import 'package:antrein/features/business_queue/domain/entities/queue_board_entry.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_command.dart';
 import 'package:antrein/features/business_queue/domain/repositories/business_queue_repository.dart';
+import 'package:antrein/features/discovery/domain/entities/service_item.dart';
+import 'package:antrein/features/discovery/domain/repositories/discovery_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -23,11 +25,12 @@ part 'staff_queue_cubit.freezed.dart';
 /// grows past a pass-through.
 @injectable
 class StaffQueueCubit extends Cubit<StaffQueueState> {
-  StaffQueueCubit(this._repo, this._realtime)
+  StaffQueueCubit(this._repo, this._realtime, this._discovery)
     : super(const StaffQueueState(status: BoardStatus.initial));
 
   final BusinessQueueRepository _repo;
   final RealtimeClient _realtime;
+  final DiscoveryRepository _discovery;
   Timer? _pollTimer;
   StreamSubscription<RealtimeEvent>? _eventSub;
   StreamSubscription<void>? _connSub;
@@ -64,6 +67,8 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
     final businessId = _businessId;
     final outletId = _outletId;
     if (businessId == null || outletId == null) return;
+    // A locally-moved waiting list awaits its reason — don't clobber the preview.
+    if (silent && (state.hasPendingReorder || state.isReordering)) return;
     if (silent) emit(state.copyWith(isRefreshing: true));
     final result = await _repo.getBoard(
       businessId: businessId,
@@ -140,6 +145,156 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
       },
     );
   }
+
+  /// Loads (once) the service catalog backing the walk-in form (§67).
+  Future<void> loadWalkInServices() async {
+    final businessId = _businessId;
+    if (businessId == null ||
+        state.walkInServices != null ||
+        state.isLoadingServices) {
+      return;
+    }
+    emit(state.copyWith(isLoadingServices: true));
+    final result = await _discovery.listServices(businessId);
+    result.match(
+      (failure) => emit(
+        state.copyWith(isLoadingServices: false, actionError: failure.message),
+      ),
+      (services) => emit(
+        state.copyWith(isLoadingServices: false, walkInServices: services),
+      ),
+    );
+  }
+
+  /// Creates a walk-in booking + queue entry (§67). Success surfaces the
+  /// assigned display number and resyncs the board.
+  Future<void> createWalkIn({
+    required String customerName,
+    required String serviceId,
+    String? phoneNumber,
+  }) async {
+    final businessId = _businessId;
+    final outletId = _outletId;
+    if (businessId == null || outletId == null || state.isCreatingWalkIn) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        isCreatingWalkIn: true,
+        walkInCreatedNumber: null,
+        actionError: null,
+        actionConflict: false,
+      ),
+    );
+    final result = await _repo.createWalkIn(
+      businessId: businessId,
+      outletId: outletId,
+      serviceId: serviceId,
+      customerName: customerName,
+      phoneNumber: phoneNumber,
+      idempotencyKey: _newKey(),
+    );
+    await result.match(
+      (failure) async => emit(
+        state.copyWith(isCreatingWalkIn: false, actionError: failure.message),
+      ),
+      (displayNumber) async {
+        emit(
+          state.copyWith(
+            isCreatingWalkIn: false,
+            walkInCreatedNumber: displayNumber,
+          ),
+        );
+        await _fetch(silent: true);
+      },
+    );
+  }
+
+  /// Locally previews a waiting-list move (§90). [oldIndex]/[newIndex] use
+  /// remove-then-insert semantics (`onReorderItem` reports them that way).
+  /// Background refreshes pause until [commitReorder] or [cancelReorder].
+  void moveWaiting(int oldIndex, int newIndex) {
+    final board = state.board;
+    if (board == null || state.isReordering) return;
+    final moved = [...board.waiting];
+    if (oldIndex < 0 ||
+        newIndex < 0 ||
+        oldIndex >= moved.length ||
+        newIndex >= moved.length) {
+      return;
+    }
+    moved.insert(newIndex, moved.removeAt(oldIndex));
+    emit(
+      state.copyWith(
+        board: _withWaiting(board, moved),
+        hasPendingReorder: true,
+      ),
+    );
+  }
+
+  /// Commits the previewed order with the required [reason] (§90). The payload
+  /// is exactly the waiting+skipped id set, guarded by the aggregate version.
+  Future<void> commitReorder(String reason) async {
+    final businessId = _businessId;
+    final outletId = _outletId;
+    final board = state.board;
+    if (businessId == null ||
+        outletId == null ||
+        board == null ||
+        !state.hasPendingReorder ||
+        state.isReordering) {
+      return;
+    }
+    emit(state.copyWith(isReordering: true, actionError: null));
+    final result = await _repo.reorderQueue(
+      businessId: businessId,
+      outletId: outletId,
+      businessDate: board.businessDate,
+      expectedQueueVersion: board.version,
+      orderedQueueEntryIds: [
+        for (final e in board.waiting) e.queueEntryId,
+        for (final e in board.skipped) e.queueEntryId,
+      ],
+      reason: reason,
+      idempotencyKey: _newKey(),
+    );
+    result.match(
+      (failure) => emit(
+        state.copyWith(
+          isReordering: false,
+          hasPendingReorder: false,
+          actionError: failure.message,
+          actionConflict: failure.code == ApiErrorCodes.queueVersionConflict,
+        ),
+      ),
+      (_) => emit(
+        state.copyWith(isReordering: false, hasPendingReorder: false),
+      ),
+    );
+    // Success or failure, REST is authoritative — resync the real order.
+    await _fetch(silent: true);
+  }
+
+  /// Discards the previewed order and restores the server board.
+  Future<void> cancelReorder() async {
+    if (!state.hasPendingReorder) return;
+    emit(state.copyWith(hasPendingReorder: false));
+    await _fetch(silent: true);
+  }
+
+  static QueueBoard _withWaiting(
+    QueueBoard board,
+    List<QueueBoardEntry> waiting,
+  ) => QueueBoard(
+    businessDate: board.businessDate,
+    outletId: board.outletId,
+    isOpen: board.isOpen,
+    version: board.version,
+    waiting: waiting,
+    skipped: board.skipped,
+    currentServing: board.currentServing,
+    updatedAt: board.updatedAt,
+  );
 
   /// Live board updates over WebSocket (§108). A `queue.snapshot.updated.v1`
   /// event is a hint: it triggers an authoritative REST refetch. Rooms are lost

@@ -221,5 +221,19 @@
   "cmdReturn": "Return",
   "cmdStart": "Start",
   "cmdComplete": "Complete",
-  "cmdNoShow": "No-show"
+  "cmdNoShow": "No-show",
+
+  "walkInAdd": "Add walk-in",
+  "walkInTitle": "New walk-in",
+  "walkInNameLabel": "Customer name",
+  "walkInPhoneLabel": "Phone number (optional)",
+  "walkInServiceLabel": "Service",
+  "walkInSubmit": "Add to queue",
+  "walkInCreated": "Walk-in added: {number}",
+  "@walkInCreated": { "placeholders": { "number": { "type": "String" } } },
+  "walkInServicesFailed": "Couldn't load services.",
+  "reorderReasonTitle": "Reorder reason",
+  "reorderReasonHint": "Why is the order changing?",
+  "reorderSave": "Save order",
+  "commonCancel": "Cancel"
 }

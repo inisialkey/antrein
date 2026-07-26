@@ -16,13 +16,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// Staff queue board (contract §82–§89). Resolves the outlet and hosts the live
-/// board; command buttons appear only when [canManage] (holds `queue.manage`).
+/// Staff queue board (contract §67, §82–§90). Resolves the outlet and hosts the
+/// live board; command buttons and the walk-in FAB appear only when [canManage]
+/// (`queue.manage`), drag-reorder only when [canReorder] (`queue.reorder`).
 class StaffQueuePage extends StatelessWidget {
   const StaffQueuePage({
     required this.businessId,
     required this.membershipOutletIds,
     required this.canManage,
+    required this.canReorder,
     this.businessName,
     super.key,
   });
@@ -30,6 +32,7 @@ class StaffQueuePage extends StatelessWidget {
   final String businessId;
   final List<String> membershipOutletIds;
   final bool canManage;
+  final bool canReorder;
   final String? businessName;
 
   @override
@@ -44,14 +47,23 @@ class StaffQueuePage extends StatelessWidget {
       );
       return cubit;
     },
-    child: _StaffQueueView(canManage: canManage, businessName: businessName),
+    child: _StaffQueueView(
+      canManage: canManage,
+      canReorder: canReorder,
+      businessName: businessName,
+    ),
   );
 }
 
 class _StaffQueueView extends StatelessWidget {
-  const _StaffQueueView({required this.canManage, this.businessName});
+  const _StaffQueueView({
+    required this.canManage,
+    required this.canReorder,
+    this.businessName,
+  });
 
   final bool canManage;
+  final bool canReorder;
   final String? businessName;
 
   @override
@@ -73,12 +85,26 @@ class _StaffQueueView extends StatelessWidget {
           ),
         ],
       ),
+      floatingActionButton: canManage
+          ? Builder(
+              builder: (context) => FloatingActionButton.extended(
+                icon: const Icon(Icons.person_add_alt_1),
+                label: Text(l10n.walkInAdd),
+                onPressed: () => _openWalkInSheet(context),
+              ),
+            )
+          : null,
       body: BlocConsumer<StaffQueueCubit, StaffQueueState>(
         listenWhen: (previous, current) =>
-            current.actionError != null &&
-            previous.actionError != current.actionError,
+            (current.actionError != null &&
+                previous.actionError != current.actionError) ||
+            (current.walkInCreatedNumber != null &&
+                previous.walkInCreatedNumber != current.walkInCreatedNumber),
         listener: (context, state) {
-          final message = state.actionConflict
+          final created = state.walkInCreatedNumber;
+          final message = created != null && state.actionError == null
+              ? l10n.walkInCreated(created)
+              : state.actionConflict
               ? l10n.boardVersionConflict
               : (state.actionError ?? l10n.boardActionFailed);
           ScaffoldMessenger.of(context)
@@ -96,10 +122,25 @@ class _StaffQueueView extends StatelessWidget {
             child: _Board(
               board: state.board!,
               canManage: canManage,
+              canReorder: canReorder,
               actingEntryId: state.actingEntryId,
             ),
           ),
         },
+      ),
+    );
+  }
+
+  void _openWalkInSheet(BuildContext context) {
+    final cubit = context.read<StaffQueueCubit>();
+    unawaited(cubit.loadWalkInServices());
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) =>
+            BlocProvider.value(value: cubit, child: const _WalkInSheet()),
       ),
     );
   }
@@ -109,11 +150,13 @@ class _Board extends StatelessWidget {
   const _Board({
     required this.board,
     required this.canManage,
+    required this.canReorder,
     required this.actingEntryId,
   });
 
   final QueueBoard board;
   final bool canManage;
+  final bool canReorder;
   final String? actingEntryId;
 
   @override
@@ -145,15 +188,22 @@ class _Board extends StatelessWidget {
           ],
           _SectionHeader(l10n.boardWaitingCount(board.waiting.length)),
           const Gap(Dimens.space8),
-          for (final entry in board.waiting) ...[
-            _EntryCard(
-              entry: entry,
+          if (canReorder && board.waiting.length > 1)
+            _ReorderableWaiting(
+              waiting: board.waiting,
               canManage: canManage,
-              acting: actingEntryId == entry.queueEntryId,
-              actionsLocked: actingEntryId != null,
-            ),
-            const Gap(Dimens.space8),
-          ],
+              actingEntryId: actingEntryId,
+            )
+          else
+            for (final entry in board.waiting) ...[
+              _EntryCard(
+                entry: entry,
+                canManage: canManage,
+                acting: actingEntryId == entry.queueEntryId,
+                actionsLocked: actingEntryId != null,
+              ),
+              const Gap(Dimens.space8),
+            ],
           if (board.waiting.isEmpty)
             Text(
               l10n.boardNoneWaiting,
@@ -178,6 +228,213 @@ class _Board extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+/// Long-press-and-drag reorder of the waiting list (§90, needs `queue.reorder`).
+/// A drop previews the order locally, then a required-reason dialog commits it;
+/// cancel restores the server order.
+class _ReorderableWaiting extends StatelessWidget {
+  const _ReorderableWaiting({
+    required this.waiting,
+    required this.canManage,
+    required this.actingEntryId,
+  });
+
+  final List<QueueBoardEntry> waiting;
+  final bool canManage;
+  final String? actingEntryId;
+
+  @override
+  Widget build(BuildContext context) => ReorderableListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    buildDefaultDragHandles: false,
+    itemCount: waiting.length,
+    // onReorderItem already reports remove-then-insert indices.
+    onReorderItem: (oldIndex, newIndex) =>
+        unawaited(_onReorder(context, oldIndex, newIndex)),
+    itemBuilder: (context, index) {
+      final entry = waiting[index];
+      return Padding(
+        key: ValueKey(entry.queueEntryId),
+        padding: EdgeInsets.only(bottom: Dimens.space8.r),
+        child: ReorderableDelayedDragStartListener(
+          index: index,
+          enabled: actingEntryId == null,
+          child: _EntryCard(
+            entry: entry,
+            canManage: canManage,
+            acting: actingEntryId == entry.queueEntryId,
+            actionsLocked: actingEntryId != null,
+          ),
+        ),
+      );
+    },
+  );
+
+  Future<void> _onReorder(
+    BuildContext context,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex) return;
+    final cubit = context.read<StaffQueueCubit>()
+      ..moveWaiting(oldIndex, newIndex);
+    final l10n = context.l10n;
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.reorderReasonTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 500,
+          decoration: InputDecoration(hintText: l10n.reorderReasonHint),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(l10n.reorderSave),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    // The reason is mandatory (§90) — an empty one cancels the move.
+    if (reason == null || reason.isEmpty) {
+      await cubit.cancelReorder();
+    } else {
+      await cubit.commitReorder(reason);
+    }
+  }
+}
+
+/// Walk-in creation form (§67): customer name, optional phone, service pick.
+/// Staff assignment stays `any_available` — a barber is chosen at start-service.
+class _WalkInSheet extends StatefulWidget {
+  const _WalkInSheet();
+
+  @override
+  State<_WalkInSheet> createState() => _WalkInSheetState();
+}
+
+class _WalkInSheetState extends State<_WalkInSheet> {
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
+  String? _serviceId;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: Dimens.space16.r,
+        right: Dimens.space16.r,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + Dimens.space16.r,
+      ),
+      child: BlocBuilder<StaffQueueCubit, StaffQueueState>(
+        builder: (context, state) {
+          final services = state.walkInServices;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.walkInTitle, style: context.textTheme.titleLarge),
+              const Gap(Dimens.space16),
+              AppTextField(
+                label: l10n.walkInNameLabel,
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+              ),
+              const Gap(Dimens.space12),
+              AppTextField(
+                label: l10n.walkInPhoneLabel,
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+              ),
+              const Gap(Dimens.space12),
+              if (state.isLoadingServices)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: Dimens.space12),
+                  child: LinearProgressIndicator(),
+                )
+              else if (services == null)
+                Text(
+                  l10n.walkInServicesFailed,
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: context.colorScheme.error,
+                  ),
+                )
+              else
+                DropdownButtonFormField<String>(
+                  initialValue: _serviceId,
+                  decoration: InputDecoration(
+                    labelText: l10n.walkInServiceLabel,
+                  ),
+                  items: [
+                    for (final service in services)
+                      DropdownMenuItem(
+                        value: service.id,
+                        child: Text(
+                          '${service.name} · ${service.price.formatted}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _serviceId = value),
+                ),
+              const Gap(Dimens.space16),
+              FilledButton(
+                onPressed:
+                    _name.text.trim().isEmpty ||
+                        _serviceId == null ||
+                        state.isCreatingWalkIn
+                    ? null
+                    : () => unawaited(_submit(context)),
+                child: state.isCreatingWalkIn
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l10n.walkInSubmit),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _submit(BuildContext context) async {
+    final cubit = context.read<StaffQueueCubit>();
+    final phone = _phone.text.trim();
+    await cubit.createWalkIn(
+      customerName: _name.text.trim(),
+      serviceId: _serviceId!,
+      phoneNumber: phone.isEmpty ? null : phone,
+    );
+    // The page-level listener shows the created/error snackbar; the sheet only
+    // closes itself on success.
+    if (context.mounted && cubit.state.walkInCreatedNumber != null) {
+      Navigator.pop(context);
+    }
   }
 }
 

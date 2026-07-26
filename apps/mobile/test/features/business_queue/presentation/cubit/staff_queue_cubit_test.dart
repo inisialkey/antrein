@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:antrein/core/domain/money.dart';
 import 'package:antrein/core/error/failures.dart';
 import 'package:antrein/core/network/api_error_codes.dart';
 import 'package:antrein/core/realtime/realtime_client.dart';
@@ -11,6 +12,8 @@ import 'package:antrein/features/business_queue/domain/repositories/business_que
 import 'package:antrein/features/business_queue/presentation/cubit/staff_queue_cubit.dart';
 import 'package:antrein/features/customer_queue/customer_queue.dart'
     show QueueStatus;
+import 'package:antrein/features/discovery/domain/entities/service_item.dart';
+import 'package:antrein/features/discovery/domain/repositories/discovery_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -21,9 +24,12 @@ class MockBusinessQueueRepository extends Mock
 
 class MockRealtimeClient extends Mock implements RealtimeClient {}
 
+class MockDiscoveryRepository extends Mock implements DiscoveryRepository {}
+
 void main() {
   late MockBusinessQueueRepository repo;
   late MockRealtimeClient realtime;
+  late MockDiscoveryRepository discovery;
   late StreamController<RealtimeEvent> events;
   late StreamController<void> connections;
 
@@ -43,12 +49,44 @@ void main() {
     waiting: [waitingEntry],
     skipped: [],
   );
+  const secondWaiting = QueueBoardEntry(
+    queueEntryId: 'que_w2',
+    displayNumber: 'A013',
+    bookingId: 'bkg_w2',
+    status: QueueStatus.waiting,
+    version: 1,
+  );
+  const skippedEntry = QueueBoardEntry(
+    queueEntryId: 'que_s1',
+    displayNumber: 'A010',
+    bookingId: 'bkg_s1',
+    status: QueueStatus.skipped,
+    version: 3,
+  );
+  const reorderBoard = QueueBoard(
+    businessDate: '2026-07-26',
+    outletId: 'out_1',
+    isOpen: true,
+    version: 18,
+    waiting: [waitingEntry, secondWaiting],
+    skipped: [skippedEntry],
+  );
+  const service = ServiceItem(
+    id: 'svc_1',
+    name: 'Haircut',
+    durationMinutes: 30,
+    price: Money(50000),
+  );
 
-  setUpAll(() => registerFallbackValue(''));
+  setUpAll(() {
+    registerFallbackValue('');
+    registerFallbackValue(<String>[]);
+  });
 
   setUp(() {
     repo = MockBusinessQueueRepository();
     realtime = MockRealtimeClient();
+    discovery = MockDiscoveryRepository();
     events = StreamController<RealtimeEvent>.broadcast();
     connections = StreamController<void>.broadcast();
     when(() => realtime.events).thenAnswer((_) => events.stream);
@@ -62,18 +100,18 @@ void main() {
     await connections.close();
   });
 
-  StaffQueueCubit build() => StaffQueueCubit(repo, realtime);
+  StaffQueueCubit build() => StaffQueueCubit(repo, realtime, discovery);
 
-  void stubLoad() {
+  void stubLoad([QueueBoard initial = board]) {
     when(
       () => repo.resolveOutletId(
         businessId: 'biz_1',
         membershipOutletIds: const [],
       ),
-    ).thenAnswer((_) async => const Right('out_1'));
+    ).thenAnswer((_) async => Right(initial.outletId));
     when(
       () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
-    ).thenAnswer((_) async => const Right(board));
+    ).thenAnswer((_) async => Right(initial));
   }
 
   blocTest<StaffQueueCubit, StaffQueueState>(
@@ -209,4 +247,212 @@ void main() {
       ).called(2); // initial load + reconnect resync
     },
   );
+
+  group('walk-in (§67)', () {
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'loads the service list once and caches it',
+      build: build,
+      setUp: () {
+        stubLoad();
+        when(
+          () => discovery.listServices('biz_1'),
+        ).thenAnswer((_) async => const Right([service]));
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        await cubit.loadWalkInServices();
+        await cubit.loadWalkInServices();
+      },
+      verify: (cubit) {
+        verify(() => discovery.listServices('biz_1')).called(1);
+        expect(cubit.state.walkInServices, const [service]);
+        expect(cubit.state.isLoadingServices, isFalse);
+      },
+    );
+
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'a created walk-in exposes its display number and resyncs the board',
+      build: build,
+      setUp: () {
+        stubLoad();
+        when(
+          () => repo.createWalkIn(
+            businessId: 'biz_1',
+            outletId: 'out_1',
+            serviceId: 'svc_1',
+            customerName: 'Budi',
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer((_) async => const Right('A014'));
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        await cubit.createWalkIn(customerName: 'Budi', serviceId: 'svc_1');
+      },
+      verify: (cubit) {
+        expect(cubit.state.walkInCreatedNumber, 'A014');
+        expect(cubit.state.isCreatingWalkIn, isFalse);
+        verify(
+          () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
+        ).called(2); // initial load + post-create resync
+      },
+    );
+
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'a failed walk-in surfaces an action error',
+      build: build,
+      setUp: () {
+        stubLoad();
+        when(
+          () => repo.createWalkIn(
+            businessId: 'biz_1',
+            outletId: 'out_1',
+            serviceId: 'svc_1',
+            customerName: 'Budi',
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer((_) async => const Left(ServerFailure('Queue closed')));
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        await cubit.createWalkIn(customerName: 'Budi', serviceId: 'svc_1');
+      },
+      verify: (cubit) {
+        expect(cubit.state.actionError, 'Queue closed');
+        expect(cubit.state.walkInCreatedNumber, isNull);
+        expect(cubit.state.isCreatingWalkIn, isFalse);
+      },
+    );
+  });
+
+  group('reorder (§90)', () {
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'moveWaiting reorders locally; commitReorder sends the exact '
+      'waiting+skipped id set with the aggregate version',
+      build: build,
+      setUp: () {
+        stubLoad(reorderBoard);
+        when(
+          () => repo.reorderQueue(
+            businessId: 'biz_1',
+            outletId: 'out_1',
+            businessDate: '2026-07-26',
+            expectedQueueVersion: 18,
+            orderedQueueEntryIds: const ['que_w2', 'que_w1', 'que_s1'],
+            reason: 'Priority arrived',
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer((_) async => const Right(null));
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        cubit.moveWaiting(0, 1);
+        expect(
+          cubit.state.board!.waiting.map((e) => e.queueEntryId),
+          ['que_w2', 'que_w1'],
+        );
+        expect(cubit.state.hasPendingReorder, isTrue);
+        await cubit.commitReorder('Priority arrived');
+      },
+      verify: (cubit) {
+        expect(cubit.state.hasPendingReorder, isFalse);
+        expect(cubit.state.isReordering, isFalse);
+        expect(cubit.state.actionError, isNull);
+        verify(
+          () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
+        ).called(2); // initial load + post-reorder resync
+      },
+    );
+
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'a reorder version conflict resyncs the board and flags the conflict',
+      build: build,
+      setUp: () {
+        stubLoad(reorderBoard);
+        when(
+          () => repo.reorderQueue(
+            businessId: 'biz_1',
+            outletId: 'out_1',
+            businessDate: '2026-07-26',
+            expectedQueueVersion: 18,
+            orderedQueueEntryIds: any(named: 'orderedQueueEntryIds'),
+            reason: any(named: 'reason'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer(
+          (_) async => const Left(
+            ConflictFailure(
+              'Queue changed',
+              code: ApiErrorCodes.queueVersionConflict,
+            ),
+          ),
+        );
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        cubit.moveWaiting(0, 1);
+        await cubit.commitReorder('Priority arrived');
+      },
+      verify: (cubit) {
+        expect(cubit.state.actionConflict, isTrue);
+        expect(cubit.state.hasPendingReorder, isFalse);
+        verify(
+          () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
+        ).called(2); // initial load + conflict resync
+      },
+    );
+
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'cancelReorder restores the server order',
+      build: build,
+      setUp: () => stubLoad(reorderBoard),
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        cubit.moveWaiting(0, 1);
+        await cubit.cancelReorder();
+      },
+      verify: (cubit) {
+        expect(cubit.state.hasPendingReorder, isFalse);
+        expect(
+          cubit.state.board!.waiting.map((e) => e.queueEntryId),
+          ['que_w1', 'que_w2'],
+        );
+        verifyNever(
+          () => repo.reorderQueue(
+            businessId: any(named: 'businessId'),
+            outletId: any(named: 'outletId'),
+            businessDate: any(named: 'businessDate'),
+            expectedQueueVersion: any(named: 'expectedQueueVersion'),
+            orderedQueueEntryIds: any(named: 'orderedQueueEntryIds'),
+            reason: any(named: 'reason'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        );
+        verify(
+          () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
+        ).called(2); // initial load + cancel restore
+      },
+    );
+
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'a pending reorder blocks background refreshes from clobbering the '
+      'optimistic order',
+      build: build,
+      setUp: () => stubLoad(reorderBoard),
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        cubit.moveWaiting(0, 1);
+        await cubit.refresh();
+      },
+      verify: (cubit) {
+        expect(
+          cubit.state.board!.waiting.map((e) => e.queueEntryId),
+          ['que_w2', 'que_w1'],
+        );
+        verify(
+          () => repo.getBoard(businessId: 'biz_1', outletId: 'out_1'),
+        ).called(1); // initial load only — refresh skipped while pending
+      },
+    );
+  });
 }

@@ -22,6 +22,30 @@ abstract interface class BusinessQueueRepository {
     String? staffId,
   });
 
+  /// Creates a walk-in booking + queue entry (§67) and returns the assigned
+  /// display number (e.g. `A014`).
+  ResultFuture<String> createWalkIn({
+    required String businessId,
+    required String outletId,
+    required String serviceId,
+    required String customerName,
+    required String idempotencyKey,
+    String? phoneNumber,
+  });
+
+  /// Reorders the outlet queue (§90). [orderedQueueEntryIds] must be exactly
+  /// the current waiting+skipped set; [expectedQueueVersion] is the board's
+  /// aggregate version.
+  ResultVoid reorderQueue({
+    required String businessId,
+    required String outletId,
+    required String businessDate,
+    required int expectedQueueVersion,
+    required List<String> orderedQueueEntryIds,
+    required String reason,
+    required String idempotencyKey,
+  });
+
   /// The outlet whose queue this member manages: their first assigned outlet,
   /// or — for owners, who carry no `outletIds` — the business's primary outlet.
   ResultFuture<String> resolveOutletId({

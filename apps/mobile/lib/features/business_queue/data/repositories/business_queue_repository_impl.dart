@@ -46,6 +46,48 @@ class BusinessQueueRepositoryImpl implements BusinessQueueRepository {
   });
 
   @override
+  ResultFuture<String> createWalkIn({
+    required String businessId,
+    required String outletId,
+    required String serviceId,
+    required String customerName,
+    required String idempotencyKey,
+    String? phoneNumber,
+  }) => _guard(
+    'createWalkIn',
+    () => _remote.createWalkIn(
+      businessId: businessId,
+      outletId: outletId,
+      serviceId: serviceId,
+      customerName: customerName,
+      phoneNumber: phoneNumber,
+      idempotencyKey: idempotencyKey,
+    ),
+  );
+
+  @override
+  ResultVoid reorderQueue({
+    required String businessId,
+    required String outletId,
+    required String businessDate,
+    required int expectedQueueVersion,
+    required List<String> orderedQueueEntryIds,
+    required String reason,
+    required String idempotencyKey,
+  }) => _guard(
+    'reorderQueue',
+    () => _remote.reorderQueue(
+      businessId: businessId,
+      outletId: outletId,
+      businessDate: businessDate,
+      expectedQueueVersion: expectedQueueVersion,
+      orderedQueueEntryIds: orderedQueueEntryIds,
+      reason: reason,
+      idempotencyKey: idempotencyKey,
+    ),
+  );
+
+  @override
   ResultFuture<String> resolveOutletId({
     required String businessId,
     required List<String> membershipOutletIds,
