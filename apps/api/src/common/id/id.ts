@@ -26,6 +26,7 @@ export const ID_PREFIXES = [
   'qsh',
   'qre',
   'ntf',
+  'ntd',
   'rev',
   'fil',
   'adt',

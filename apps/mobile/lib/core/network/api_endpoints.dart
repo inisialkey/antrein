@@ -12,6 +12,7 @@ abstract final class ApiEndpoints {
 
   // Users
   static const String currentUser = '/me';
+  static String meDevice(String deviceId) => '/me/devices/$deviceId';
 
   // Discovery (public — ADR 0022)
   static const String businesses = '/businesses';

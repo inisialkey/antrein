@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:antrein/core/device/device_id_store.dart';
 import 'package:antrein/core/error/exceptions.dart';
 import 'package:antrein/core/error/failures.dart';
 import 'package:antrein/core/logging/app_logger.dart';
@@ -12,19 +15,30 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AuthRepository)
 class AuthRepositoryImpl implements AuthRepository {
-  const AuthRepositoryImpl(this._remote, this._storage);
+  const AuthRepositoryImpl(this._remote, this._storage, this._deviceIds);
 
   final AuthRemoteDataSource _remote;
   final TokenStorage _storage;
+  final DeviceIdStore _deviceIds;
+
+  static String get _platform => Platform.isIOS ? 'ios' : 'android';
 
   @override
   ResultFuture<User> signIn({
     required String email,
     required String password,
-  }) => _authenticate(
-    () => _remote.signIn(email: email, password: password),
-    'signIn',
-  );
+  }) async {
+    final deviceId = await _deviceIds.obtain();
+    return _authenticate(
+      () => _remote.signIn(
+        email: email,
+        password: password,
+        deviceId: deviceId,
+        platform: _platform,
+      ),
+      'signIn',
+    );
+  }
 
   @override
   ResultFuture<User> register({
@@ -40,23 +54,40 @@ class AuthRepositoryImpl implements AuthRepository {
       phoneNumber: phoneNumber,
     ),
     'register',
+    // Register has no device payload — attach the device right after.
+    registerDevice: true,
   );
 
   /// Shared path for sign-in and register: on success, persist the token pair
   /// before returning the user, so the very next authenticated request is armed.
   Future<Either<Failure, User>> _authenticate(
     Future<AuthResult> Function() action,
-    String label,
-  ) async {
+    String label, {
+    bool registerDevice = false,
+  }) async {
     try {
       final result = await action();
       await _storage.saveTokens(
         accessToken: result.session.accessToken,
         refreshToken: result.session.refreshToken,
       );
+      if (registerDevice) await _registerDeviceBestEffort();
       return Right(result.user.toEntity());
     } on Exception catch (e) {
       return Left(_mapFailure(e, label));
+    }
+  }
+
+  /// Device bookkeeping never blocks or fails an authentication.
+  Future<void> _registerDeviceBestEffort() async {
+    try {
+      await _remote.registerDevice(
+        deviceId: await _deviceIds.obtain(),
+        platform: _platform,
+        locale: Platform.localeName.replaceAll('_', '-'),
+      );
+    } on Object catch (e) {
+      AppLogger.w('Device registration failed; continuing', error: e);
     }
   }
 
@@ -75,7 +106,11 @@ class AuthRepositoryImpl implements AuthRepository {
     // Local logout always succeeds; the server revoke is best-effort.
     try {
       final refreshToken = await _storage.readRefreshToken();
-      await _remote.signOut(refreshToken: refreshToken);
+      // deviceId lets the server deactivate push for this phone (ADR 0039).
+      await _remote.signOut(
+        refreshToken: refreshToken,
+        deviceId: await _deviceIds.obtain(),
+      );
     } on Object catch (e) {
       AppLogger.w(
         'Server logout failed; clearing local session anyway',

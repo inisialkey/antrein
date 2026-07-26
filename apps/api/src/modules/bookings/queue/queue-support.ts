@@ -259,7 +259,14 @@ export async function outletSnapshotSummary(
  */
 export async function enqueueQueueEvent(
   tx: Prisma.TransactionClient,
-  input: { queueEntryId?: string; bookingId?: string | null; outletId: string; businessDate: Date },
+  input: {
+    queueEntryId?: string;
+    bookingId?: string | null;
+    outletId: string;
+    businessDate: Date;
+    /** Push-worthy transition (ADR 0044), decided inside the mutating tx. */
+    push?: 'checked_in' | 'called';
+  },
 ): Promise<void> {
   const businessDate = input.businessDate.toISOString().slice(0, 10);
   const isEntry = !!input.queueEntryId;
@@ -267,6 +274,11 @@ export async function enqueueQueueEvent(
     eventType: isEntry ? 'queue.entry.updated.v1' : 'queue.snapshot.updated.v1',
     aggregateType: isEntry ? 'queue_entry' : 'outlet_queue',
     aggregateId: input.queueEntryId ?? input.outletId,
-    payload: { bookingId: input.bookingId ?? null, outletId: input.outletId, businessDate },
+    payload: {
+      bookingId: input.bookingId ?? null,
+      outletId: input.outletId,
+      businessDate,
+      push: input.push ?? null,
+    },
   });
 }

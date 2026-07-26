@@ -5042,6 +5042,18 @@ return-to-waiting and complete against the wrong source state.
 
 ---
 
+## 122.1 Notification and Device Errors
+
+```text
+NOTIFICATION_NOT_FOUND
+DEVICE_NOT_FOUND
+```
+
+Both are 404s. Knowing an ID is never permission: requesting another user's
+notification or device returns `*_NOT_FOUND`, not a 403.
+
+---
+
 ## 123. Review Errors
 
 ```text

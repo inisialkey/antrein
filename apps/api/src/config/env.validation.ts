@@ -96,6 +96,10 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(0)
   OUTBOX_DISPATCHER_INTERVAL_MS = 2_000;
+
+  /** Push adapter (ADR 0044): 'log' (observable local default) or 'none'. */
+  @IsIn(['log', 'none'])
+  PUSH_PROVIDER = 'log';
 }
 
 const NUMERIC_KEYS = [

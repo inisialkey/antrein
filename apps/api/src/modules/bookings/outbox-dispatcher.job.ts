@@ -10,6 +10,7 @@ import {
 } from '../../infrastructure/outbox/outbox';
 import { buildEvent } from '../../infrastructure/realtime/realtime-event';
 import { RealtimePublisherPort } from '../../infrastructure/realtime/realtime-publisher.port';
+import { NotificationsService } from '../notifications/notifications.service';
 import { toCustomerQueueResource } from './queue/queue.mapper';
 import { customerViewOf, outletSnapshotSummary } from './queue/queue-support';
 
@@ -30,6 +31,7 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly publisher: RealtimePublisherPort,
+    private readonly notifications: NotificationsService,
   ) {}
 
   onModuleInit(): void {
@@ -72,10 +74,11 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
   }
 
   private async dispatch(row: ClaimedOutboxRow): Promise<void> {
-    const { outletId, businessDate, bookingId } = row.payload as {
+    const { outletId, businessDate, bookingId, push } = row.payload as {
       outletId: string;
       businessDate: string;
       bookingId: string | null;
+      push?: 'checked_in' | 'called' | null;
     };
     const businessDateAt = new Date(`${businessDate}T00:00:00Z`);
 
@@ -117,5 +120,16 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
         toCustomerQueueResource(entry, view),
       ),
     );
+
+    // Push-worthy transitions (realtime-queue §53/§54, ADR 0044): the kind was
+    // decided inside the mutating tx; provider failures never fail the dispatch.
+    if (push) {
+      await this.notifications.notifyQueuePush({
+        userId: booking.customerUserId,
+        kind: push,
+        bookingId,
+        displayNumber: entry.displayNumber,
+      });
+    }
   }
 }

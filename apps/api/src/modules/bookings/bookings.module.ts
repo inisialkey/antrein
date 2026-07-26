@@ -3,6 +3,7 @@ import { RealtimeModule } from '../../infrastructure/realtime/realtime.module';
 import { AuditModule } from '../audit/audit.module';
 import { IdempotencyModule } from '../idempotency/idempotency.module';
 import { MembershipsModule } from '../memberships/memberships.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { BusinessBookingsController } from './business-bookings.controller';
@@ -29,7 +30,7 @@ import { QueueService } from './queue/queue.service';
  * target for when WebSocket/outbox extraction justifies it.
  */
 @Module({
-  imports: [MembershipsModule, IdempotencyModule, AuditModule, RealtimeModule],
+  imports: [MembershipsModule, IdempotencyModule, AuditModule, RealtimeModule, NotificationsModule],
   controllers: [
     BookingsController,
     BusinessBookingsController,
