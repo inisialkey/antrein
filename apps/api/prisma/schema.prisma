@@ -38,6 +38,8 @@ model User {
   bookingStatusChanges   BookingStatusHistory[] @relation("BookingStatusActor")
   payments               Payment[] @relation("CustomerPayments")
   requestedRefunds       Refund[] @relation("RequestedRefunds")
+  reviews                Review[] @relation("CustomerReviews")
+  moderatedReviews       Review[] @relation("ModeratedReviews")
 
   @@map("users")
 }
@@ -187,6 +189,7 @@ model Business {
   bookings    Booking[]
   payments    Payment[]
   refunds     Refund[]
+  reviews     Review[]
 
   @@index([status], map: "businesses_status_idx")
   @@index([ownerUserId], map: "businesses_owner_idx")
@@ -308,6 +311,7 @@ model StaffProfile {
   schedules         StaffSchedule[]
   bookings          Booking[]
   reservations      BookingReservation[]
+  reviews           Review[]
 
   @@index([businessId, status], map: "staff_profiles_business_status_idx")
   @@map("staff_profiles")
@@ -492,6 +496,7 @@ model Booking {
   reservation   BookingReservation?
   payments      Payment[]
   refunds       Refund[]
+  review        Review?
 
   @@unique([businessId, bookingCode], map: "bookings_code_uq")
   @@index([customerUserId, createdAt(sort: Desc)], map: "bookings_customer_created_idx")
@@ -777,4 +782,28 @@ model OutboxEvent {
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@map("outbox_events")
+}
+
+model Review {
+  id                String    @id
+  bookingId         String    @unique(map: "reviews_booking_uq") @map("booking_id")
+  businessId        String    @map("business_id")
+  customerUserId    String    @map("customer_user_id")
+  staffId           String?   @map("staff_id")
+  rating            Int       @db.SmallInt
+  comment           String?
+  status            String    @default("published")
+  moderatedAt       DateTime? @map("moderated_at") @db.Timestamptz(6)
+  moderatedByUserId String?   @map("moderated_by_user_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+  business    Business      @relation(fields: [businessId], references: [id])
+  customer    User          @relation("CustomerReviews", fields: [customerUserId], references: [id])
+  staff       StaffProfile? @relation(fields: [staffId], references: [id])
+  moderatedBy User?         @relation("ModeratedReviews", fields: [moderatedByUserId], references: [id])
+
+  @@index([businessId, status, createdAt(sort: Desc)], map: "reviews_business_status_created_idx")
+  @@map("reviews")
 }
