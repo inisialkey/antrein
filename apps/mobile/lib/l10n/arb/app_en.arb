@@ -235,5 +235,24 @@
   "reorderReasonTitle": "Reorder reason",
   "reorderReasonHint": "Why is the order changing?",
   "reorderSave": "Save order",
-  "commonCancel": "Cancel"
+  "commonCancel": "Cancel",
+
+  "reviewCardTitle": "Rate your visit",
+  "reviewCommentHint": "Share your experience (optional)",
+  "reviewSubmit": "Submit review",
+  "reviewThanks": "Thanks for your review!",
+  "reviewAlreadyExists": "This booking has already been reviewed.",
+  "reviewFailed": "Couldn't submit the review. Please try again.",
+
+  "reportsTitle": "Daily Report",
+  "reportsOpen": "Daily report",
+  "reportsLoadFailed": "Couldn't load the report.",
+  "reportTotalBookings": "Total bookings",
+  "reportCompleted": "Completed",
+  "reportCancelled": "Cancelled",
+  "reportNoShow": "No-show",
+  "reportAvgWait": "Avg. wait",
+  "reportGrossPaid": "Gross paid",
+  "reportPending": "Pending payment",
+  "reportRefunded": "Refunded"
 }

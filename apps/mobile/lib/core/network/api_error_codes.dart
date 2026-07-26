@@ -53,6 +53,13 @@ abstract final class ApiErrorCodes {
   static const String queueEntryNotInService = 'QUEUE_ENTRY_NOT_IN_SERVICE';
   static const String queueEntryNotSkipped = 'QUEUE_ENTRY_NOT_SKIPPED';
 
+  // Reviews (api-contract §96 — mirrors reviews/review.errors.ts)
+  static const String reviewAlreadyExists = 'REVIEW_ALREADY_EXISTS';
+  static const String reviewBookingNotCompleted =
+      'REVIEW_BOOKING_NOT_COMPLETED';
+  static const String reviewNotAllowed = 'REVIEW_NOT_ALLOWED';
+  static const String reviewRatingInvalid = 'REVIEW_RATING_INVALID';
+
   /// Access-token 401s that should trigger a transparent refresh + retry.
   /// (The API returns `_INVALID` for both malformed and expired access tokens.)
   static const Set<String> refreshable = {

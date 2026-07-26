@@ -31,6 +31,12 @@ abstract final class ApiEndpoints {
       '/bookings/$bookingId/cancel';
   static String checkIn(String bookingId) => '/bookings/$bookingId/check-in';
   static String customerQueue(String bookingId) => '/bookings/$bookingId/queue';
+  static String bookingReview(String bookingId) =>
+      '/bookings/$bookingId/review';
+
+  // Reports (business — contract §98)
+  static String dailySummary(String businessId) =>
+      '/businesses/$businessId/reports/daily-summary';
 
   // Business queue (staff — contract §67, §82–§90)
   static String outletQueue(String businessId, String outletId) =>

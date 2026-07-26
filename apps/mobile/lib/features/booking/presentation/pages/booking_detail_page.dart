@@ -10,6 +10,7 @@ import 'package:antrein/features/booking/domain/entities/booking.dart';
 import 'package:antrein/features/booking/presentation/cubit/booking_detail_cubit.dart';
 import 'package:antrein/features/booking/presentation/widgets/booking_status_chip.dart';
 import 'package:antrein/features/customer_queue/customer_queue.dart';
+import 'package:antrein/features/reviews/reviews.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -105,6 +106,10 @@ class _Loaded extends StatelessWidget {
         const Gap(Dimens.space16),
         if (booking.status == BookingStatus.confirmed) ...[
           _CheckInCard(bookingId: booking.id),
+          const Gap(Dimens.space16),
+        ],
+        if (booking.status == BookingStatus.completed) ...[
+          ReviewCard(bookingId: booking.id),
           const Gap(Dimens.space16),
         ],
         if (_showsQueueLink(booking.status)) ...[

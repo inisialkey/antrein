@@ -22,7 +22,8 @@ enum Routes {
   customerQueue('/queue/:bookingId'),
 
   // Business shell (stub until M4)
-  businessHome('/business');
+  businessHome('/business'),
+  businessReports('/business/reports/:businessId/:outletId');
 
   const Routes(this.path);
 
