@@ -1,3 +1,4 @@
+import 'package:antrein/core/device/device_id_store.dart';
 import 'package:antrein/core/error/exceptions.dart';
 import 'package:antrein/core/error/failures.dart';
 import 'package:antrein/core/storage/token_storage.dart';
@@ -13,9 +14,12 @@ class MockRemote extends Mock implements AuthRemoteDataSource {}
 
 class MockStorage extends Mock implements TokenStorage {}
 
+class MockDeviceIds extends Mock implements DeviceIdStore {}
+
 void main() {
   late MockRemote remote;
   late MockStorage storage;
+  late MockDeviceIds deviceIds;
   late AuthRepositoryImpl repo;
 
   const authResult = AuthResult(
@@ -36,15 +40,19 @@ void main() {
   setUp(() {
     remote = MockRemote();
     storage = MockStorage();
-    repo = AuthRepositoryImpl(remote, storage);
+    deviceIds = MockDeviceIds();
+    when(() => deviceIds.obtain()).thenAnswer((_) async => 'dev_TEST');
+    repo = AuthRepositoryImpl(remote, storage, deviceIds);
   });
 
   group('signIn', () {
-    test('persists the token pair and returns the user on success', () async {
+    test('sends the device identity, persists tokens, returns user', () async {
       when(
         () => remote.signIn(
           email: any(named: 'email'),
           password: any(named: 'password'),
+          deviceId: any(named: 'deviceId'),
+          platform: any(named: 'platform'),
         ),
       ).thenAnswer((_) async => authResult);
       when(
@@ -59,6 +67,14 @@ void main() {
       expect(result.isRight(), isTrue);
       result.match((_) => fail('expected Right'), (u) => expect(u.id, 'usr_1'));
       verify(
+        () => remote.signIn(
+          email: 'o@e.com',
+          password: 'password1',
+          deviceId: 'dev_TEST',
+          platform: any(named: 'platform'),
+        ),
+      ).called(1);
+      verify(
         () => storage.saveTokens(accessToken: 'acc', refreshToken: 'ref'),
       ).called(1);
     });
@@ -68,6 +84,8 @@ void main() {
         () => remote.signIn(
           email: any(named: 'email'),
           password: any(named: 'password'),
+          deviceId: any(named: 'deviceId'),
+          platform: any(named: 'platform'),
         ),
       ).thenThrow(const AuthException('bad credentials'));
 
@@ -86,28 +104,70 @@ void main() {
     });
   });
 
-  test('register maps ConflictException → ConflictFailure', () async {
-    when(
-      () => remote.register(
-        name: any(named: 'name'),
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-        phoneNumber: any(named: 'phoneNumber'),
-      ),
-    ).thenThrow(const ConflictException('email already registered'));
+  group('register', () {
+    test('registers the device after success, best-effort', () async {
+      when(
+        () => remote.register(
+          name: any(named: 'name'),
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          phoneNumber: any(named: 'phoneNumber'),
+        ),
+      ).thenAnswer((_) async => authResult);
+      when(
+        () => storage.saveTokens(
+          accessToken: any(named: 'accessToken'),
+          refreshToken: any(named: 'refreshToken'),
+        ),
+      ).thenAnswer((_) async {});
+      // Device registration failing must not fail the auth flow.
+      when(
+        () => remote.registerDevice(
+          deviceId: any(named: 'deviceId'),
+          platform: any(named: 'platform'),
+          locale: any(named: 'locale'),
+        ),
+      ).thenThrow(const ServerException('down'));
 
-    final result = await repo.register(name: 'n', email: 'e', password: 'p');
+      final result = await repo.register(name: 'n', email: 'e', password: 'p');
 
-    result.match(
-      (f) => expect(f, isA<ConflictFailure>()),
-      (_) => fail('expected Left'),
-    );
+      expect(result.isRight(), isTrue);
+      verify(
+        () => remote.registerDevice(
+          deviceId: 'dev_TEST',
+          platform: any(named: 'platform'),
+          locale: any(named: 'locale'),
+        ),
+      ).called(1);
+    });
+
+    test('maps ConflictException → ConflictFailure', () async {
+      when(
+        () => remote.register(
+          name: any(named: 'name'),
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          phoneNumber: any(named: 'phoneNumber'),
+        ),
+      ).thenThrow(const ConflictException('email already registered'));
+
+      final result = await repo.register(name: 'n', email: 'e', password: 'p');
+
+      result.match(
+        (f) => expect(f, isA<ConflictFailure>()),
+        (_) => fail('expected Left'),
+      );
+    });
   });
 
-  test('signOut clears storage even when the server revoke throws', () async {
+  test('signOut passes the deviceId and clears storage even when the server '
+      'revoke throws', () async {
     when(() => storage.readRefreshToken()).thenAnswer((_) async => 'ref');
     when(
-      () => remote.signOut(refreshToken: any(named: 'refreshToken')),
+      () => remote.signOut(
+        refreshToken: any(named: 'refreshToken'),
+        deviceId: any(named: 'deviceId'),
+      ),
     ).thenThrow(const ServerException('server down'));
     when(() => storage.clear()).thenAnswer((_) async {});
 

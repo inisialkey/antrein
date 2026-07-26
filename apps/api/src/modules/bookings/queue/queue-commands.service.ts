@@ -811,12 +811,14 @@ export class QueueCommandsService {
         return this.prisma.$transaction(async (tx) => {
           const result = await handler(tx, entry, new Date());
           // Every versioned command touches this entry — one marker per command
-          // fans out to the customer + staff snapshot events (§49).
+          // fans out to the customer + staff snapshot events (§49). Call and
+          // recall are the push-worthy ones (realtime-queue §54).
           await enqueueQueueEvent(tx, {
             queueEntryId: entry.id,
             bookingId: entry.bookingId,
             outletId: entry.outletId,
             businessDate: entry.businessDate,
+            push: action === 'queue_call' || action === 'queue_recall' ? 'called' : undefined,
           });
           return result;
         });

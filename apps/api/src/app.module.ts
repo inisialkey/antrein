@@ -8,11 +8,13 @@ import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { PaymentsInfraModule } from './infrastructure/payments/payments-infra.module';
+import { PushInfraModule } from './infrastructure/push/push-infra.module';
 import { RealtimeModule } from './infrastructure/realtime/realtime.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OutletsModule } from './modules/outlets/outlets.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { ServicesModule } from './modules/services/services.module';
@@ -24,8 +26,10 @@ import { UsersModule } from './modules/users/users.module';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     PrismaModule,
     PaymentsInfraModule,
+    PushInfraModule,
     RealtimeModule,
     HealthModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
     BusinessesModule,

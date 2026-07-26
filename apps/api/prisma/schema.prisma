@@ -27,6 +27,7 @@ model User {
   passwordResetTokens    PasswordResetToken[]
   devices                Device[]
   notificationPreference UserNotificationPreference?
+  notifications          Notification[]
   ownedBusinesses        Business[]
   memberships            BusinessMembership[]
   sentInvitations        StaffInvitation[] @relation("InvitedBy")
@@ -98,8 +99,52 @@ model Device {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  deliveries NotificationDelivery[]
+
   @@index([userId, status], map: "devices_user_status_idx")
   @@map("devices")
+}
+
+model Notification {
+  id               String    @id
+  userId           String    @map("user_id")
+  notificationType String    @map("notification_type")
+  title            String
+  body             String
+  resourceType     String?   @map("resource_type")
+  resourceId       String?   @map("resource_id")
+  isRead           Boolean   @default(false) @map("is_read")
+  readAt           DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, createdAt(sort: Desc)], map: "notifications_user_created_idx")
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id                String    @id
+  notificationId    String    @map("notification_id")
+  deviceId          String?   @map("device_id")
+  provider          String
+  providerMessageId String?   @map("provider_message_id")
+  status            String
+  attemptCount      Int       @default(0) @map("attempt_count")
+  lastErrorCode     String?   @map("last_error_code")
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  deliveredAt       DateTime? @map("delivered_at") @db.Timestamptz(6)
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  device       Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt], map: "notification_deliveries_status_idx")
+  @@index([notificationId], map: "notification_deliveries_notification_idx")
+  @@map("notification_deliveries")
 }
 
 model UserNotificationPreference {

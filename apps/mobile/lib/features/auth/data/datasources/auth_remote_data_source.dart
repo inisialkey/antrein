@@ -7,7 +7,12 @@ import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<AuthResult> signIn({required String email, required String password});
+  Future<AuthResult> signIn({
+    required String email,
+    required String password,
+    String? deviceId,
+    String? platform,
+  });
 
   Future<AuthResult> register({
     required String name,
@@ -18,7 +23,14 @@ abstract class AuthRemoteDataSource {
 
   Future<UserModel> getCurrentUser();
 
-  Future<void> signOut({String? refreshToken});
+  /// Idempotent `PUT /me/devices/{deviceId}` (api-contract §34).
+  Future<void> registerDevice({
+    required String deviceId,
+    required String platform,
+    String? locale,
+  });
+
+  Future<void> signOut({String? refreshToken, String? deviceId});
 
   Future<void> requestPasswordReset({required String email});
 
@@ -38,11 +50,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AuthResult> signIn({
     required String email,
     required String password,
+    String? deviceId,
+    String? platform,
   }) async {
     final data = await _send(
       () => _dio.post<dynamic>(
         ApiEndpoints.login,
-        data: {'email': email, 'password': password},
+        data: {
+          'email': email,
+          'password': password,
+          // The nested device payload upserts the row and binds the session,
+          // so logout can deactivate push for this phone (ADR 0039).
+          if (deviceId != null && platform != null)
+            'device': {'deviceId': deviceId, 'platform': platform},
+        },
       ),
     );
     return AuthResult.fromJson(data);
@@ -77,14 +98,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> signOut({String? refreshToken}) async {
+  Future<void> registerDevice({
+    required String deviceId,
+    required String platform,
+    String? locale,
+  }) async {
+    await _send(
+      () => _dio.put<dynamic>(
+        ApiEndpoints.meDevice(deviceId),
+        data: {'platform': platform, 'locale': ?locale},
+      ),
+    );
+  }
+
+  @override
+  Future<void> signOut({String? refreshToken, String? deviceId}) async {
     await _send(
       () => _dio.post<dynamic>(
         ApiEndpoints.logout,
-        // Null-aware map element (Dart 3.8+): the key is omitted when the token
-        // is null, so logout falls back to bearer-only (LogoutDto.refreshToken
-        // is optional).
-        data: {'refreshToken': ?refreshToken},
+        // Null-aware map elements (Dart 3.8+): keys are omitted when null, so
+        // logout falls back to bearer-only (LogoutDto fields are optional).
+        data: {'refreshToken': ?refreshToken, 'deviceId': ?deviceId},
       ),
     );
   }

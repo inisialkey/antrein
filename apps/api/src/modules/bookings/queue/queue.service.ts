@@ -167,6 +167,7 @@ export class QueueService {
           bookingId,
           outletId: outlet.id,
           businessDate,
+          push: 'checked_in',
         });
       });
     } catch (error) {
