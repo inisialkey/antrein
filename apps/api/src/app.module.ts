@@ -7,6 +7,7 @@ import { createValidationPipe } from './common/errors/validation.pipe-factory';
 import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope.interceptor';
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
+import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { PaymentsInfraModule } from './infrastructure/payments/payments-infra.module';
 import { PushInfraModule } from './infrastructure/push/push-infra.module';
 import { RealtimeModule } from './infrastructure/realtime/realtime.module';
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     PrismaModule,
+    MetricsModule,
     PaymentsInfraModule,
     PushInfraModule,
     RealtimeModule,

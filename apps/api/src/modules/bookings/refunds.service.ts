@@ -25,7 +25,17 @@ import { RequestRefundDto } from './dto/booking.dto';
 
 const PAYMENT_IDEMPOTENCY_RETENTION_HOURS = 24 * 7; // ADR 0034
 
+/** Reconciliation ignores refunds younger than this — the sync path may still be running. */
+const RECONCILE_MIN_AGE_MS = 60_000;
+
 const REFUNDABLE_PAYMENT_STATUSES: PaymentStatus[] = ['paid', 'partially_refunded'];
+
+/** A refund settlement may recompute the payment aggregate only from these (never a late/terminal payment). */
+const TRANSITIONABLE_REFUND_STATUSES: PaymentStatus[] = [
+  'refund_pending',
+  'partially_refunded',
+  'paid',
+];
 
 export function toRefundResource(refund: Refund): Record<string, unknown> {
   return {
@@ -264,6 +274,36 @@ export class RefundsService {
     return refund;
   }
 
+  /**
+   * §81 refund reconciliation: re-settle refunds stuck in refund_pending
+   * (provider call failed or the provider settles asynchronously). Safe because
+   * requestRefund is idempotent by refundId — the refund id doubles as the
+   * provider merchant reference, so a re-request never double-refunds.
+   */
+  async reconcilePendingRefunds(now = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - RECONCILE_MIN_AGE_MS);
+    const stale = await this.prisma.refund.findMany({
+      where: { status: 'refund_pending', requestedAt: { lte: cutoff } },
+      take: 50,
+      orderBy: { requestedAt: 'asc' },
+    });
+    let settled = 0;
+    for (const refund of stale) {
+      const payment = await this.prisma.payment.findUnique({ where: { id: refund.paymentId } });
+      if (!payment) continue;
+      // Late refunds never moved the payment off its terminal status (§30) —
+      // reconciliation must keep it that way.
+      const skipPaymentTransition = payment.status !== 'refund_pending';
+      await this.settleWithProvider(payment, refund.id, refund.amount, skipPaymentTransition);
+      const fresh = await this.prisma.refund.findUnique({
+        where: { id: refund.id },
+        select: { status: true },
+      });
+      if (fresh?.status === 'refunded') settled += 1;
+    }
+    return settled;
+  }
+
   private async settleWithProvider(
     payment: Payment,
     refundId: string,
@@ -302,6 +342,16 @@ export class RefundsService {
       });
       if (updated.count === 0) return;
       if (skipPaymentTransition) return;
+      // Re-read under the lock: reconciliation decided `skipPaymentTransition`
+      // from a status read outside this tx, so only aggregate-transition a
+      // payment the lock confirms is still refunding. A terminal/late payment
+      // (never `refund_pending`) must keep its status — paymentStatusAfterRefunds
+      // would otherwise wrongly promote e.g. an expired payment to `refunded`.
+      const locked = await tx.payment.findUniqueOrThrow({
+        where: { id: payment.id },
+        select: { status: true },
+      });
+      if (!TRANSITIONABLE_REFUND_STATUSES.includes(locked.status as PaymentStatus)) return;
       const refunds = await tx.refund.findMany({ where: { paymentId: payment.id } });
       const aggregate = paymentStatusAfterRefunds(payment.amount, refunds);
       await tx.payment.update({

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { newId } from '../../common/id/id';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { MetricsService } from '../../infrastructure/metrics/metrics.service';
 import {
   ParsedProviderEvent,
   PaymentProviderPort,
@@ -31,6 +32,8 @@ export class PaymentTransitionService {
     @Optional()
     @Inject(PaymentProviderPort)
     private readonly provider: PaymentProviderPort | null,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   async applyProviderEvent(
@@ -241,6 +244,7 @@ export class PaymentTransitionService {
     }
     // §38: the reservation is preserved — the confirmed booking still blocks the slot.
     await this.closeEvent(tx, eventRowId, 'processed', undefined, payment.id);
+    this.metrics?.inc('payment_paid_total');
     return {
       outcome: 'processed',
       paymentId: payment.id,

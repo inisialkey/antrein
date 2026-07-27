@@ -17,6 +17,10 @@ abstract class AuthRepository {
 
   ResultVoid signOut();
 
+  /// Best-effort re-registration of this device's push token, for when the
+  /// OneSignal subscription id arrives after sign-in. Always resolves Right.
+  ResultVoid syncDevice();
+
   ResultFuture<User> getCurrentUser();
 
   ResultVoid requestPasswordReset({required String email});

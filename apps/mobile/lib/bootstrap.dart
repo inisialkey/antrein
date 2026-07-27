@@ -5,7 +5,9 @@ import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/feature_flags/feature_flag_service.dart';
 import 'package:antrein/core/observability/crash_reporter.dart';
 import 'package:antrein/core/observability/error_sinks.dart';
+import 'package:antrein/core/push/push_service.dart';
 import 'package:antrein/core/router/app_router.dart';
+import 'package:antrein/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -44,6 +46,12 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
         const Duration(seconds: 4),
         onTimeout: () {},
       );
+
+      // Start push (no-op unless ONESIGNAL_APP_ID is built in) and re-register
+      // the device when a late subscription id arrives. Never block launch.
+      final push = getIt<PushService>();
+      unawaited(push.start());
+      push.onTokenChange(() => unawaited(getIt<AuthRepository>().syncDevice()));
 
       runApp(await builder());
       // App tree mounted — allow the first frame and close the native splash.

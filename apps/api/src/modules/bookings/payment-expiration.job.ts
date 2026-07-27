@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { newId } from '../../common/id/id';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { MetricsService } from '../../infrastructure/metrics/metrics.service';
 import { Prisma } from '../../generated/prisma/client';
 
 /**
@@ -18,6 +19,8 @@ export class PaymentExpirationJob implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   onModuleInit(): void {
@@ -54,6 +57,7 @@ export class PaymentExpirationJob implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`Failed to expire payment ${id}: ${(error as Error).message}`);
       }
     }
+    if (expired > 0) this.metrics?.inc('payment_expired_total', expired);
     return expired;
   }
 

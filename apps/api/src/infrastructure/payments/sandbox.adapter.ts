@@ -49,6 +49,7 @@ export class SandboxPaymentAdapter extends PaymentProviderPort {
     { paymentId: string; amount: number; currency: string; status: ProviderPaymentStatusValue }
   >();
   private failCreates = 0;
+  private failRefunds = 0;
 
   constructor(private readonly webhookSecret: string) {
     super();
@@ -57,6 +58,11 @@ export class SandboxPaymentAdapter extends PaymentProviderPort {
   /** Test/dev hook: the next createPayment call fails like a provider outage. */
   failNextCreate(times = 1): void {
     this.failCreates = times;
+  }
+
+  /** Test/dev hook: the next requestRefund call fails like a provider outage. */
+  failNextRefund(times = 1): void {
+    this.failRefunds = times;
   }
 
   /** Test/dev hook: set the provider-side status returned by getPaymentStatus. */
@@ -114,8 +120,12 @@ export class SandboxPaymentAdapter extends PaymentProviderPort {
   }
 
   async requestRefund(input: RequestProviderRefundInput): Promise<RequestProviderRefundResult> {
+    if (this.failRefunds > 0) {
+      this.failRefunds -= 1;
+      throw new ProviderUnavailableError('Sandbox refund is unavailable (simulated).');
+    }
     // Sandbox refunds settle instantly; async provider refunds arrive with a
-    // real gateway adapter.
+    // real gateway adapter. Idempotent by refundId — reconciliation re-requests.
     return { providerReference: `sbx_rf_${input.refundId}`, status: 'refunded' };
   }
 

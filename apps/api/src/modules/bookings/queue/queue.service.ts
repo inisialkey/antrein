@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { newId } from '../../../common/id/id';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { MetricsService } from '../../../infrastructure/metrics/metrics.service';
 import { IdempotencyService } from '../../idempotency/idempotency.service';
 import { MembershipsService } from '../../memberships/memberships.service';
 import { bookingNotFound } from '../booking.errors';
@@ -34,6 +35,8 @@ export class QueueService {
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
     private readonly memberships: MembershipsService,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   async checkIn(
@@ -170,6 +173,7 @@ export class QueueService {
           push: 'checked_in',
         });
       });
+      this.metrics?.inc('queue_check_in_total');
     } catch (error) {
       // Concurrent check-in loses the UNIQUE(booking_id) race.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

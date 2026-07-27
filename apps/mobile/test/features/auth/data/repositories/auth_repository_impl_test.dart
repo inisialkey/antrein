@@ -1,6 +1,7 @@
 import 'package:antrein/core/device/device_id_store.dart';
 import 'package:antrein/core/error/exceptions.dart';
 import 'package:antrein/core/error/failures.dart';
+import 'package:antrein/core/push/push_service.dart';
 import 'package:antrein/core/storage/token_storage.dart';
 import 'package:antrein/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:antrein/features/auth/data/models/auth_result.dart';
@@ -16,10 +17,13 @@ class MockStorage extends Mock implements TokenStorage {}
 
 class MockDeviceIds extends Mock implements DeviceIdStore {}
 
+class MockPush extends Mock implements PushService {}
+
 void main() {
   late MockRemote remote;
   late MockStorage storage;
   late MockDeviceIds deviceIds;
+  late MockPush push;
   late AuthRepositoryImpl repo;
 
   const authResult = AuthResult(
@@ -41,8 +45,18 @@ void main() {
     remote = MockRemote();
     storage = MockStorage();
     deviceIds = MockDeviceIds();
+    push = MockPush();
     when(() => deviceIds.obtain()).thenAnswer((_) async => 'dev_TEST');
-    repo = AuthRepositoryImpl(remote, storage, deviceIds);
+    when(() => push.pushToken).thenReturn('sub_TOKEN');
+    when(
+      () => remote.registerDevice(
+        deviceId: any(named: 'deviceId'),
+        platform: any(named: 'platform'),
+        locale: any(named: 'locale'),
+        pushToken: any(named: 'pushToken'),
+      ),
+    ).thenAnswer((_) async {});
+    repo = AuthRepositoryImpl(remote, storage, deviceIds, push);
   });
 
   group('signIn', () {
@@ -76,6 +90,15 @@ void main() {
       ).called(1);
       verify(
         () => storage.saveTokens(accessToken: 'acc', refreshToken: 'ref'),
+      ).called(1);
+      // Follow-up PUT uploads the OneSignal subscription id as the pushToken.
+      verify(
+        () => remote.registerDevice(
+          deviceId: 'dev_TEST',
+          platform: any(named: 'platform'),
+          locale: any(named: 'locale'),
+          pushToken: 'sub_TOKEN',
+        ),
       ).called(1);
     });
 
@@ -126,6 +149,7 @@ void main() {
           deviceId: any(named: 'deviceId'),
           platform: any(named: 'platform'),
           locale: any(named: 'locale'),
+          pushToken: any(named: 'pushToken'),
         ),
       ).thenThrow(const ServerException('down'));
 
@@ -137,6 +161,7 @@ void main() {
           deviceId: 'dev_TEST',
           platform: any(named: 'platform'),
           locale: any(named: 'locale'),
+          pushToken: any(named: 'pushToken'),
         ),
       ).called(1);
     });
