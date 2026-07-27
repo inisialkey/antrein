@@ -1,4 +1,5 @@
 import { User, UserNotificationPreference } from '../../generated/prisma/client';
+import { deriveRoles, MembershipSummary } from '../memberships/memberships.service';
 
 export interface UserResponse {
   id: string;
@@ -8,15 +9,12 @@ export interface UserResponse {
   avatarUrl: string | null;
   status: string;
   roles: string[];
-  businessMemberships: unknown[];
+  businessMemberships: MembershipSummary[];
   createdAt: string;
 }
 
-/**
- * Contract user shape. Roles/memberships are customer-only until the
- * memberships module lands (M4) — the backend derives them, never the client.
- */
-export function toUserResponse(user: User): UserResponse {
+/** Contract user shape. Roles/memberships are derived by the backend, never the client. */
+export function toUserResponse(user: User, memberships: MembershipSummary[]): UserResponse {
   return {
     id: user.id,
     name: user.name,
@@ -24,8 +22,8 @@ export function toUserResponse(user: User): UserResponse {
     phoneNumber: user.phoneNumber,
     avatarUrl: null,
     status: user.status,
-    roles: ['customer'],
-    businessMemberships: [],
+    roles: deriveRoles(memberships.map((m) => ({ role: m.role, status: 'active' }))),
+    businessMemberships: memberships,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -33,9 +31,10 @@ export function toUserResponse(user: User): UserResponse {
 export function toMeResponse(
   user: User,
   prefs: UserNotificationPreference | null,
+  memberships: MembershipSummary[],
 ): UserResponse & { notificationPreferences: Record<string, boolean>; updatedAt: string } {
   return {
-    ...toUserResponse(user),
+    ...toUserResponse(user, memberships),
     notificationPreferences: {
       bookingUpdates: prefs?.bookingUpdates ?? true,
       paymentUpdates: prefs?.paymentUpdates ?? true,

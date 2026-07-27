@@ -2230,6 +2230,12 @@ Response `200`:
 }
 ```
 
+Errors:
+
+- `STAFF_INVITATION_NOT_FOUND` — unknown invitation, revoked invitation, or an invitation addressed to a different email
+- `STAFF_INVITATION_EXPIRED`
+- `STAFF_ALREADY_MEMBER`
+
 ---
 
 ## 52. Update Staff
@@ -3116,6 +3122,54 @@ Response `200`:
 
 ---
 
+## 68.1. Cancel Business Booking
+
+> Added per ADR 0040 (business-initiated cancellation is a separate endpoint from customer cancellation).
+
+```http
+POST /businesses/{businessId}/bookings/{bookingId}/cancel
+```
+
+Authorization:
+
+```text
+booking.manage
+```
+
+Idempotency:
+
+```text
+Required
+```
+
+Request:
+
+```json
+{
+  "reasonCode": "business_unavailable",
+  "reason": "Staff member is ill; we cannot honor the appointment."
+}
+```
+
+`reasonCode` and `reason` are required.
+
+Behavior (ADR 0040):
+
+- Customer receives a full refund of net paid amount regardless of timing thresholds.
+- Audit record is required.
+- Customer notification is required.
+
+Response `200` mirrors the customer cancellation response shape.
+
+Errors:
+
+- `BOOKING_NOT_FOUND`
+- `BOOKING_CANNOT_BE_CANCELLED`
+- `BOOKING_ALREADY_CANCELLED`
+- `BOOKING_ALREADY_COMPLETED`
+
+---
+
 # Part X — Payment APIs
 
 ## 69. Payment Resource
@@ -3221,6 +3275,10 @@ Purpose:
 - Never bypass signature-verified provider evidence.
 - Must be rate-limited.
 
+`refreshedFromProvider` is `false` when the provider could not be queried (ADR
+0029) — the stored state is returned and the request never fails over provider
+unavailability.
+
 Response `200`:
 
 ```json
@@ -3232,7 +3290,8 @@ Response `200`:
       "status": "paid",
       "paidAt": "2026-07-21T13:35:00+07:00"
     },
-    "bookingStatus": "confirmed"
+    "bookingStatus": "confirmed",
+    "refreshedFromProvider": true
   },
   "meta": {
     "requestId": "req_01J...",
@@ -3655,6 +3714,8 @@ Response `200`:
 
 Business response may include customer names because staff requires operational identification.
 
+Each snapshot entry also carries its per-entry `version`, so staff commands (§83–§89) can supply `expectedVersion` for optimistic concurrency (realtime-queue §20). No phone numbers appear in the staff snapshot (ADR 0041).
+
 ---
 
 ## 83. Call Queue Entry
@@ -3704,6 +3765,7 @@ Response `200`:
 Errors:
 
 - `QUEUE_ENTRY_NOT_WAITING`
+- `QUEUE_HAS_CALLED_ENTRY`
 - `QUEUE_VERSION_CONFLICT`
 - `QUEUE_ENTRY_NOT_FOUND`
 - `FORBIDDEN_QUEUE_RESOURCE`
@@ -4887,6 +4949,8 @@ STAFF_NOT_ELIGIBLE_FOR_SERVICE
 STAFF_NOT_AVAILABLE
 STAFF_ALREADY_MEMBER
 STAFF_INVITATION_ALREADY_PENDING
+STAFF_INVITATION_NOT_FOUND
+STAFF_INVITATION_EXPIRED
 STAFF_HAS_ACTIVE_BOOKINGS
 ```
 
@@ -4961,12 +5025,32 @@ QUEUE_ENTRY_NOT_FOUND
 QUEUE_ENTRY_ALREADY_EXISTS
 QUEUE_ENTRY_NOT_WAITING
 QUEUE_ENTRY_NOT_CALLED
+QUEUE_ENTRY_NOT_SKIPPED
+QUEUE_ENTRY_NOT_IN_SERVICE
 QUEUE_ENTRY_ALREADY_COMPLETED
+QUEUE_HAS_CALLED_ENTRY
 QUEUE_VERSION_CONFLICT
 QUEUE_REORDER_INVALID_ENTRIES
 QUEUE_REORDER_REASON_REQUIRED
 OUTLET_QUEUE_CLOSED
 ```
+
+`QUEUE_HAS_CALLED_ENTRY` (409) is raised when calling an entry while another is
+already `called` at the outlet — one called entry per outlet+date (ADR 0041).
+`QUEUE_ENTRY_NOT_SKIPPED` / `QUEUE_ENTRY_NOT_IN_SERVICE` (409) guard
+return-to-waiting and complete against the wrong source state.
+
+---
+
+## 122.1 Notification and Device Errors
+
+```text
+NOTIFICATION_NOT_FOUND
+DEVICE_NOT_FOUND
+```
+
+Both are 404s. Knowing an ID is never permission: requesting another user's
+notification or device returns `*_NOT_FOUND`, not a 403.
 
 ---
 
@@ -5534,6 +5618,7 @@ GET    /businesses/{businessId}/bookings
 GET    /businesses/{businessId}/bookings/{bookingId}
 POST   /businesses/{businessId}/walk-ins
 POST   /businesses/{businessId}/bookings/{bookingId}/no-show
+POST   /businesses/{businessId}/bookings/{bookingId}/cancel
 POST   /businesses/{businessId}/bookings/{bookingId}/payments/pay-at-location/confirm
 ```
 

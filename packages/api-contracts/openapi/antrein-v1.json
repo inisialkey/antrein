@@ -156,6 +156,209 @@
         ]
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "isRead",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "queue_called",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List my notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_readAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark all my notifications as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notificationId}": {
+      "get": {
+        "operationId": "NotificationsController_get",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notificationId}/read": {
+      "post": {
+        "operationId": "NotificationsController_read",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/me/devices/{deviceId}": {
+      "put": {
+        "operationId": "MeDevicesController_register",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register or update a device (idempotent by deviceId)",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "operationId": "MeDevicesController_remove",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a device",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "MeController_me",
@@ -173,6 +376,2498 @@
         "summary": "Get the current user profile",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/api/v1/businesses": {
+      "get": {
+        "operationId": "BusinessesController_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Name search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "description": "Reserved in v1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "description": "Reserved in v1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "description": "Reserved in v1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recommended",
+                "rating_desc",
+                "name_asc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List active businesses for discovery",
+        "tags": [
+          "businesses"
+        ]
+      },
+      "post": {
+        "operationId": "BusinessesController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a business with its primary outlet",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}": {
+      "get": {
+        "operationId": "BusinessesController_details",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get public business details",
+        "tags": [
+          "businesses"
+        ]
+      },
+      "patch": {
+        "operationId": "BusinessesController_update",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update business profile and policies",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/management": {
+      "get": {
+        "operationId": "BusinessesController_management",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the managed business representation",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "BookingsController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a booking (contract §60)",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "get": {
+        "operationId": "BookingsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_payment",
+                "confirmed",
+                "checked_in",
+                "waiting",
+                "called",
+                "in_service",
+                "completed",
+                "cancelled",
+                "expired",
+                "no_show"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List own bookings",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}": {
+      "get": {
+        "operationId": "BookingsController_get",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get own booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "BookingsController_cancel",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel own booking (contract §63)",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/payments": {
+      "get": {
+        "operationId": "BookingsController_listPayments",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List payments of a booking (contract §70)",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings": {
+      "get": {
+        "operationId": "BusinessBookingsController_list",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending_payment",
+                "confirmed",
+                "checked_in",
+                "waiting",
+                "called",
+                "in_service",
+                "completed",
+                "cancelled",
+                "expired",
+                "no_show"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "out_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "stf_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Exact business date.",
+            "schema": {
+              "example": "2026-07-26",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "walk_in"
+              ]
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "expired",
+                "cancelled",
+                "refund_pending",
+                "partially_refunded",
+                "refunded"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List business bookings (contract §65)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}": {
+      "get": {
+        "operationId": "BusinessBookingsController_get",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get business booking (contract §66)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "BusinessBookingsController_cancel",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel booking as business (ADR 0040, contract §68.1)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/payments/pay-at-location/confirm": {
+      "post": {
+        "operationId": "BusinessBookingsController_confirmPayAtLocation",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPayAtLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm pay-at-location payment (contract §73)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/payments/{paymentId}/refunds": {
+      "post": {
+        "operationId": "BusinessBookingsController_requestRefund",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request refund (contract §74)",
+        "tags": [
+          "business-bookings"
+        ]
+      }
+    },
+    "/api/v1/payments/{paymentId}": {
+      "get": {
+        "operationId": "PaymentsController_get",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get payment (contract §71)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/{paymentId}/refresh": {
+      "post": {
+        "operationId": "PaymentsController_refresh",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Refresh payment status from provider (contract §72)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/refunds/{refundId}": {
+      "get": {
+        "operationId": "RefundsController_get",
+        "parameters": [
+          {
+            "name": "refundId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get refund (contract §75)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/check-in": {
+      "post": {
+        "operationId": "QueueController_checkIn",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check in a booking (contract §64)",
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/queue": {
+      "get": {
+        "operationId": "QueueController_getQueue",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get own queue state (contract §81)",
+        "tags": [
+          "queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/queue": {
+      "get": {
+        "operationId": "BusinessQueueController_snapshot",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Business date; defaults to today.",
+            "schema": {
+              "example": "2026-07-22",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "waiting",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get outlet queue snapshot (contract §82)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/walk-ins": {
+      "post": {
+        "operationId": "BusinessQueueController_walkIn",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalkInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a walk-in booking + queue entry (contract §67)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/call": {
+      "post": {
+        "operationId": "BusinessQueueController_call",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Call a queue entry (contract §83)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/recall": {
+      "post": {
+        "operationId": "BusinessQueueController_recall",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recall a called entry (contract §84)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/skip": {
+      "post": {
+        "operationId": "BusinessQueueController_skip",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipQueueEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Skip a called entry (contract §85)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/return-to-waiting": {
+      "post": {
+        "operationId": "BusinessQueueController_returnToWaiting",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Return a skipped entry to waiting (contract §86)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/start-service": {
+      "post": {
+        "operationId": "BusinessQueueController_startService",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start service (contract §87)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/complete": {
+      "post": {
+        "operationId": "BusinessQueueController_complete",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Complete service (contract §88)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/queue/{queueEntryId}/no-show": {
+      "post": {
+        "operationId": "BusinessQueueController_noShowEntry",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queueEntryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowQueueEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a queue entry no-show (contract §89)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/bookings/{bookingId}/no-show": {
+      "post": {
+        "operationId": "BusinessQueueController_noShowBooking",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a booking no-show before check-in (contract §68)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/queue/reorder": {
+      "post": {
+        "operationId": "BusinessQueueController_reorder",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderQueueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder the outlet queue (contract §90)",
+        "tags": [
+          "business-queue"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}": {
+      "patch": {
+        "operationId": "OutletsController_update",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOutletDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an outlet",
+        "tags": [
+          "outlets"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/availability": {
+      "get": {
+        "operationId": "SchedulesController_availability",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "out_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "svc_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "description": "Required in MVP (ADR 0019).",
+            "schema": {
+              "example": "stf_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-07-25",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get available booking slots (contract §42)",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/operating-hours": {
+      "get": {
+        "operationId": "SchedulesController_getOperatingHours",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get outlet operating hours",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "put": {
+        "operationId": "SchedulesController_replaceOperatingHours",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceOperatingHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace outlet operating hours",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/outlets/{outletId}/closed-dates": {
+      "get": {
+        "operationId": "SchedulesController_listClosedDates",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List closed dates",
+        "tags": [
+          "schedules"
+        ]
+      },
+      "post": {
+        "operationId": "SchedulesController_createClosedDate",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClosedDateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a closed date",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff/{staffId}/schedule": {
+      "put": {
+        "operationId": "SchedulesController_replaceStaffSchedule",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceStaffScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace a staff weekly schedule",
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/services": {
+      "get": {
+        "operationId": "ServicesController_list",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": false,
+            "in": "query",
+            "description": "Reserved in v1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List services of a business",
+        "tags": [
+          "services"
+        ]
+      },
+      "post": {
+        "operationId": "ServicesController_create",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a service",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/services/{serviceId}": {
+      "patch": {
+        "operationId": "ServicesController_update",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a service",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/services/{serviceId}/deactivate": {
+      "post": {
+        "operationId": "ServicesController_deactivate",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate a service",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff": {
+      "get": {
+        "operationId": "StaffController_list",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Reserved in v1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List staff of a business",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff/invitations": {
+      "post": {
+        "operationId": "StaffController_invite",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Invite a staff member by email",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff/{staffId}": {
+      "patch": {
+        "operationId": "StaffController_update",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a staff member",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/staff/{staffId}/deactivate": {
+      "post": {
+        "operationId": "StaffController_deactivate",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate a staff member",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/invitations/{invitationId}/accept": {
+      "post": {
+        "operationId": "InvitationAcceptController_accept",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Accept a staff invitation addressed to your email",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}/review": {
+      "post": {
+        "operationId": "ReviewsController_create",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a review for a completed booking (contract §96)",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/reviews": {
+      "get": {
+        "operationId": "ReviewsController_list",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rating",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "newest",
+                "oldest",
+                "rating_desc",
+                "rating_asc"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List business reviews with summary (contract §97)",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/businesses/{businessId}/reports/daily-summary": {
+      "get": {
+        "operationId": "ReportsController_dailySummary",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "out_01J...",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Defaults to today (Asia/Jakarta)",
+            "schema": {
+              "example": "2026-07-22",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Daily operational summary for one outlet (contract §98)",
+        "tags": [
+          "reports"
         ]
       }
     }
@@ -320,6 +3015,931 @@
         "required": [
           "token",
           "newPassword"
+        ]
+      },
+      "RegisterDeviceDto": {
+        "type": "object",
+        "properties": {
+          "appVersion": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "pushToken": {
+            "type": "string",
+            "description": "Provider device push token"
+          },
+          "pushProvider": {
+            "type": "string",
+            "example": "onesignal"
+          },
+          "deviceName": {
+            "type": "string",
+            "example": "Pixel 9"
+          },
+          "locale": {
+            "type": "string",
+            "example": "id-ID"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          }
+        }
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "formatted": {
+            "type": "string",
+            "example": "Jl. Example No. 10, Jakarta"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -6.2
+          },
+          "longitude": {
+            "type": "number",
+            "example": 106.8
+          }
+        },
+        "required": [
+          "formatted"
+        ]
+      },
+      "CreateOutletDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Main Outlet"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+622112345678"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          }
+        },
+        "required": [
+          "name",
+          "address"
+        ]
+      },
+      "CreateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "AntreIn Barbershop"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logoFileId": {
+            "type": "string",
+            "example": "fil_01J..."
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "primaryOutlet": {
+            "$ref": "#/components/schemas/CreateOutletDto"
+          }
+        },
+        "required": [
+          "name",
+          "primaryOutlet"
+        ]
+      },
+      "BookingPolicyDto": {
+        "type": "object",
+        "properties": {
+          "minimumLeadMinutes": {
+            "type": "number",
+            "example": 60
+          },
+          "maximumAdvanceDays": {
+            "type": "number",
+            "example": 30
+          },
+          "automaticConfirmation": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "DepositPolicyDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "defaultType": {
+            "type": "string",
+            "enum": [
+              "none",
+              "fixed"
+            ]
+          },
+          "defaultValue": {
+            "type": "number",
+            "example": 10000
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "CancellationPolicyDto": {
+        "type": "object",
+        "properties": {
+          "fullRefundBeforeMinutes": {
+            "type": "number",
+            "example": 360
+          },
+          "partialRefundBeforeMinutes": {
+            "type": "number",
+            "example": 120
+          },
+          "partialRefundPercentage": {
+            "type": "number",
+            "example": 50
+          },
+          "noShowRefundPercentage": {
+            "type": "number",
+            "example": 0
+          }
+        }
+      },
+      "UpdateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logoFileId": {
+            "type": "string"
+          },
+          "supportedPaymentOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "pay_at_location",
+                "full_payment",
+                "deposit"
+              ]
+            }
+          },
+          "bookingPolicy": {
+            "$ref": "#/components/schemas/BookingPolicyDto"
+          },
+          "depositPolicy": {
+            "$ref": "#/components/schemas/DepositPolicyDto"
+          },
+          "cancellationPolicy": {
+            "$ref": "#/components/schemas/CancellationPolicyDto"
+          }
+        }
+      },
+      "StaffSelectionDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "specific_staff",
+              "any_available"
+            ]
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "example": "biz_01J..."
+          },
+          "outletId": {
+            "type": "string",
+            "example": "out_01J..."
+          },
+          "serviceId": {
+            "type": "string",
+            "example": "svc_01J..."
+          },
+          "staffSelection": {
+            "$ref": "#/components/schemas/StaffSelectionDto"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "example": "2026-07-26T10:00:00+07:00"
+          },
+          "paymentOption": {
+            "type": "string",
+            "enum": [
+              "pay_at_location",
+              "full_payment",
+              "deposit"
+            ]
+          },
+          "customerNotes": {
+            "type": "string",
+            "example": "Please use scissors only."
+          }
+        },
+        "required": [
+          "businessId",
+          "outletId",
+          "serviceId",
+          "staffSelection",
+          "scheduledAt",
+          "paymentOption"
+        ]
+      },
+      "CancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "example": "customer_changed_plan"
+          },
+          "reason": {
+            "type": "string",
+            "example": "I am no longer available."
+          }
+        }
+      },
+      "BusinessCancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "example": "business_unavailable"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Staff member is ill."
+          }
+        },
+        "required": [
+          "reasonCode",
+          "reason"
+        ]
+      },
+      "MoneyDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 50000
+          },
+          "currency": {
+            "type": "string",
+            "example": "IDR"
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
+      },
+      "ConfirmPayAtLocationDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "qris_manual",
+              "bank_transfer_manual",
+              "card_terminal",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "example": "Paid at front desk."
+          }
+        },
+        "required": [
+          "amount",
+          "method"
+        ]
+      },
+      "RequestRefundDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "reasonCode": {
+            "type": "string",
+            "example": "booking_cancelled"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer cancelled within full-refund window."
+          }
+        },
+        "required": [
+          "amount",
+          "reasonCode"
+        ]
+      },
+      "CheckInDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "customer_app",
+              "staff_assisted",
+              "qr"
+            ],
+            "default": "customer_app"
+          }
+        }
+      },
+      "WalkInCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Walk-In Customer"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+6281234567890"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "WalkInStaffSelectionDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "specific_staff",
+              "any_available"
+            ]
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "CreateWalkInDto": {
+        "type": "object",
+        "properties": {
+          "outletId": {
+            "type": "string",
+            "example": "out_01J..."
+          },
+          "customer": {
+            "$ref": "#/components/schemas/WalkInCustomerDto"
+          },
+          "serviceId": {
+            "type": "string",
+            "example": "svc_01J..."
+          },
+          "staffSelection": {
+            "$ref": "#/components/schemas/WalkInStaffSelectionDto"
+          },
+          "paymentOption": {
+            "type": "string",
+            "enum": [
+              "pay_at_location"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "example": null
+          }
+        },
+        "required": [
+          "outletId",
+          "customer",
+          "serviceId",
+          "staffSelection",
+          "paymentOption"
+        ]
+      },
+      "QueueCommandDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "SkipQueueEntryDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer is temporarily unavailable."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "StartServiceDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "staffId": {
+            "type": "string",
+            "example": "stf_01J..."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "CompleteServiceDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "internalNote": {
+            "type": "string",
+            "example": "Service completed successfully."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "NoShowQueueEntryDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "example": 4
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer did not respond after recall."
+          }
+        },
+        "required": [
+          "expectedVersion"
+        ]
+      },
+      "NoShowBookingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Customer did not arrive within the allowed window."
+          }
+        }
+      },
+      "ReorderQueueDto": {
+        "type": "object",
+        "properties": {
+          "businessDate": {
+            "type": "string",
+            "example": "2026-07-22"
+          },
+          "expectedQueueVersion": {
+            "type": "number",
+            "example": 18
+          },
+          "orderedQueueEntryIds": {
+            "example": [
+              "que_01J_A",
+              "que_01J_B"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "example": "Customer with appointment priority arrived."
+          }
+        },
+        "required": [
+          "businessDate",
+          "expectedQueueVersion",
+          "orderedQueueEntryIds",
+          "reason"
+        ]
+      },
+      "UpdateOutletDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          }
+        }
+      },
+      "OperatingPeriodDto": {
+        "type": "object",
+        "properties": {
+          "opensAt": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "closesAt": {
+            "type": "string",
+            "example": "21:00"
+          }
+        },
+        "required": [
+          "opensAt",
+          "closesAt"
+        ]
+      },
+      "OperatingDayDto": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "string",
+            "enum": [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday"
+            ]
+          },
+          "isClosed": {
+            "type": "boolean",
+            "example": false
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatingPeriodDto"
+            }
+          }
+        },
+        "required": [
+          "dayOfWeek",
+          "isClosed",
+          "periods"
+        ]
+      },
+      "ReplaceOperatingHoursDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatingDayDto"
+            }
+          }
+        },
+        "required": [
+          "timezone",
+          "days"
+        ]
+      },
+      "CreateClosedDateDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-08-17"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Public holiday"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      },
+      "StaffPeriodDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "endsAt": {
+            "type": "string",
+            "example": "17:00"
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "StaffDayDto": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "string",
+            "enum": [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday"
+            ]
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPeriodDto"
+            }
+          },
+          "breaks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPeriodDto"
+            }
+          }
+        },
+        "required": [
+          "dayOfWeek",
+          "isAvailable",
+          "periods"
+        ]
+      },
+      "ReplaceStaffScheduleDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Jakarta"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffDayDto"
+            }
+          }
+        },
+        "required": [
+          "timezone",
+          "days"
+        ]
+      },
+      "DepositDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "none",
+              "fixed",
+              "percentage"
+            ]
+          },
+          "value": {
+            "type": "number",
+            "example": 10000
+          }
+        },
+        "required": [
+          "type",
+          "value"
+        ]
+      },
+      "CreateServiceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Haircut"
+          },
+          "description": {
+            "type": "string"
+          },
+          "imageFileId": {
+            "type": "string",
+            "example": "fil_01J..."
+          },
+          "durationMinutes": {
+            "type": "number",
+            "example": 45
+          },
+          "price": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "deposit": {
+            "$ref": "#/components/schemas/DepositDto"
+          },
+          "eligibleStaffIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "name",
+          "durationMinutes",
+          "price"
+        ]
+      },
+      "UpdateServiceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "imageFileId": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          },
+          "price": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "deposit": {
+            "$ref": "#/components/schemas/DepositDto"
+          },
+          "eligibleStaffIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "InviteStaffDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "andi@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Andi"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "manager",
+              "barber",
+              "front_desk",
+              "cashier"
+            ]
+          },
+          "outletIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "description": "Defaults to the role preset (§128)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eligibleServiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "email",
+          "displayName",
+          "role"
+        ]
+      },
+      "UpdateStaffDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "manager",
+              "barber",
+              "front_desk",
+              "cashier"
+            ]
+          },
+          "avatarFileId": {
+            "type": "string"
+          },
+          "outletIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eligibleServiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "rating"
         ]
       }
     }

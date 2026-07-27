@@ -1214,6 +1214,8 @@ create table bookings (
     checked_in_at timestamptz null,
     customer_notes text null,
     internal_notes text null,
+    walk_in_customer_name text null,
+    walk_in_phone_number text null,
     payment_option text not null,
     business_date date not null,
     version integer not null default 1,
@@ -1304,8 +1306,11 @@ check (
 Unique indexes:
 
 ```sql
+-- Per-business uniqueness: booking codes are per-business daily sequences with
+-- a shared ANT- prefix (ADR 0038), so identical codes across businesses are
+-- expected. Codes are display-only and never authorization.
 create unique index bookings_code_uq
-on bookings(booking_code);
+on bookings(business_id, booking_code);
 ```
 
 Core indexes:
@@ -1542,6 +1547,9 @@ create table payments (
     status text not null,
     amount integer not null,
     currency text not null default 'IDR',
+    checkout jsonb null,
+    provider_creation_attempts integer not null default 0,
+    provider_creation_last_error text null,
     expires_at timestamptz null,
     paid_at timestamptz null,
     failed_at timestamptz null,
@@ -1551,6 +1559,13 @@ create table payments (
     updated_at timestamptz not null default now()
 );
 ```
+
+Provider-creation columns (ADR 0040): `checkout` stores the normalized checkout
+instruction (`{"type": "redirect_url", "url": ...}`) persisted after provider
+creation; `provider_creation_attempts`/`provider_creation_last_error` track
+customer-driven retries. A payment with attempts > 0 and no
+`provider_reference` is a retryable creation failure — there is no separate
+`provider_creation_status` column because the state is derivable.
 
 Provider values:
 
@@ -1865,7 +1880,7 @@ create table queue_entries (
     queue_number integer not null,
     display_number text not null,
     status text not null,
-    position_key numeric(20,6) null,
+    sort_order integer not null,
     checked_in_at timestamptz not null,
     called_at timestamptz null,
     last_recalled_at timestamptz null,
@@ -1930,7 +1945,7 @@ Operational indexes:
 
 ```sql
 create index queue_entries_outlet_date_status_idx
-on queue_entries(outlet_id, business_date, status, position_key, checked_in_at);
+on queue_entries(outlet_id, business_date, status, sort_order, checked_in_at);
 
 create index queue_entries_staff_status_idx
 on queue_entries(staff_id, status)
@@ -1947,30 +1962,15 @@ on queue_entries(updated_at);
 Default ordering:
 
 ```text
-position_key asc
+sort_order asc
 checked_in_at asc
 queue_number asc
 ```
 
-`position_key` options:
-
-1. Integer sequence.
-2. Numeric fractional ordering.
-3. Explicit normalized list updated during reorder.
-
-MVP recommendation:
-
-- Use a numeric `position_key`.
-- Assign initial key from queue number.
-- Reorder transactionally.
-- Periodically normalize if keys become too dense.
-
-Simpler alternative:
-
-- Store `sort_order integer`.
-- Update all affected waiting rows during reorder.
-
-Choose the simpler integer approach unless queue sizes justify fractional ordering.
+**Resolved (ADR 0038): `sort_order integer`.** Initial `sort_order = queue_number`;
+reorder rewrites the affected active rows transactionally and bumps
+`queue_counters.version` (the aggregate queue version). Fractional/normalized
+keys were rejected as unnecessary for barbershop-sized queues.
 
 ---
 
@@ -2618,7 +2618,7 @@ Index:
 
 ```sql
 create index queue_entries_active_queue_idx
-on queue_entries(outlet_id, business_date, position_key, checked_in_at)
+on queue_entries(outlet_id, business_date, sort_order, checked_in_at)
 where status in ('waiting', 'called', 'skipped', 'in_service');
 ```
 

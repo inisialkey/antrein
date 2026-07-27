@@ -8,6 +8,7 @@ import {
   EmailPort,
   PasswordChangedEmailInput,
   PasswordResetEmailInput,
+  StaffInvitationEmailInput,
 } from '../src/infrastructure/email/email.port';
 import { PrismaService } from '../src/infrastructure/database/prisma.service';
 import { PasswordHasher } from '../src/modules/auth/password.hasher';
@@ -18,11 +19,15 @@ jest.setTimeout(120_000);
 class CapturingEmail extends EmailPort {
   resets: PasswordResetEmailInput[] = [];
   changes: PasswordChangedEmailInput[] = [];
+  invitations: StaffInvitationEmailInput[] = [];
   async sendPasswordReset(input: PasswordResetEmailInput): Promise<void> {
     this.resets.push(input);
   }
   async sendPasswordChanged(input: PasswordChangedEmailInput): Promise<void> {
     this.changes.push(input);
+  }
+  async sendStaffInvitation(input: StaffInvitationEmailInput): Promise<void> {
+    this.invitations.push(input);
   }
 }
 

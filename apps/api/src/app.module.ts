@@ -7,17 +7,43 @@ import { createValidationPipe } from './common/errors/validation.pipe-factory';
 import { ResponseEnvelopeInterceptor } from './common/envelope/response-envelope.interceptor';
 import { RequestIdMiddleware } from './common/request-id/request-id.middleware';
 import { PrismaModule } from './infrastructure/database/prisma.module';
+import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { PaymentsInfraModule } from './infrastructure/payments/payments-infra.module';
+import { PushInfraModule } from './infrastructure/push/push-infra.module';
+import { RealtimeModule } from './infrastructure/realtime/realtime.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OutletsModule } from './modules/outlets/outlets.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { SchedulesModule } from './modules/schedules/schedules.module';
+import { ServicesModule } from './modules/services/services.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     PrismaModule,
+    MetricsModule,
+    PaymentsInfraModule,
+    PushInfraModule,
+    RealtimeModule,
     HealthModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
+    BusinessesModule,
+    BookingsModule,
+    OutletsModule,
+    SchedulesModule,
+    ServicesModule,
+    StaffModule,
+    ReviewsModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

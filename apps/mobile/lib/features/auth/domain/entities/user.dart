@@ -1,0 +1,51 @@
+import 'package:antrein/features/auth/domain/entities/business_membership.dart';
+import 'package:antrein/features/auth/domain/entities/user_role.dart';
+import 'package:equatable/equatable.dart';
+
+/// The signed-in user. Domain entity — optimised for app behaviour, not the
+/// database or wire shape. `roles` decides which navigation shell the user
+/// enters (see [hasBusinessAccess]).
+class User extends Equatable {
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.roles,
+    this.phoneNumber,
+    this.avatarUrl,
+    this.status = 'active',
+    this.businessMemberships = const [],
+  });
+
+  final String id;
+  final String name;
+  final String email;
+  final List<UserRole> roles;
+  final String? phoneNumber;
+  final String? avatarUrl;
+  final String status;
+  final List<BusinessMembership> businessMemberships;
+
+  /// The membership whose queue the business shell manages. MVP is one business
+  /// per user (ADR: `BUSINESS_LIMIT_REACHED`), so the first is the one.
+  BusinessMembership? get primaryMembership =>
+      businessMemberships.isEmpty ? null : businessMemberships.first;
+
+  /// True when the account holds a business-side role (owner or staff) and may
+  /// enter the business shell. Customer-only accounts use the customer shell.
+  /// Roles are customer-only until the memberships module (M4).
+  bool get hasBusinessAccess =>
+      roles.contains(UserRole.businessOwner) || roles.contains(UserRole.staff);
+
+  @override
+  List<Object?> get props => [
+    id,
+    name,
+    email,
+    roles,
+    phoneNumber,
+    avatarUrl,
+    status,
+    businessMemberships,
+  ];
+}

@@ -27,6 +27,19 @@ model User {
   passwordResetTokens    PasswordResetToken[]
   devices                Device[]
   notificationPreference UserNotificationPreference?
+  notifications          Notification[]
+  ownedBusinesses        Business[]
+  memberships            BusinessMembership[]
+  sentInvitations        StaffInvitation[] @relation("InvitedBy")
+  acceptedInvitations    StaffInvitation[] @relation("AcceptedBy")
+  createdClosedDates     ClosedDate[]
+  bookings               Booking[] @relation("CustomerBookings")
+  createdBookings        Booking[] @relation("CreatedBookings")
+  bookingStatusChanges   BookingStatusHistory[] @relation("BookingStatusActor")
+  payments               Payment[] @relation("CustomerPayments")
+  requestedRefunds       Refund[] @relation("RequestedRefunds")
+  reviews                Review[] @relation("CustomerReviews")
+  moderatedReviews       Review[] @relation("ModeratedReviews")
 
   @@map("users")
 }
@@ -88,8 +101,52 @@ model Device {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  deliveries NotificationDelivery[]
+
   @@index([userId, status], map: "devices_user_status_idx")
   @@map("devices")
+}
+
+model Notification {
+  id               String    @id
+  userId           String    @map("user_id")
+  notificationType String    @map("notification_type")
+  title            String
+  body             String
+  resourceType     String?   @map("resource_type")
+  resourceId       String?   @map("resource_id")
+  isRead           Boolean   @default(false) @map("is_read")
+  readAt           DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, createdAt(sort: Desc)], map: "notifications_user_created_idx")
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id                String    @id
+  notificationId    String    @map("notification_id")
+  deviceId          String?   @map("device_id")
+  provider          String
+  providerMessageId String?   @map("provider_message_id")
+  status            String
+  attemptCount      Int       @default(0) @map("attempt_count")
+  lastErrorCode     String?   @map("last_error_code")
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  deliveredAt       DateTime? @map("delivered_at") @db.Timestamptz(6)
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  device       Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt], map: "notification_deliveries_status_idx")
+  @@index([notificationId], map: "notification_deliveries_notification_idx")
+  @@map("notification_deliveries")
 }
 
 model UserNotificationPreference {
@@ -104,4 +161,649 @@ model UserNotificationPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_notification_preferences")
+}
+
+model Business {
+  id            String    @id
+  ownerUserId   String    @map("owner_user_id")
+  name          String
+  slug          String    @unique(map: "businesses_slug_uq")
+  description   String?
+  logoFileId    String?   @map("logo_file_id")
+  status        String    @default("pending_verification")
+  timezone      String    @default("Asia/Jakarta")
+  ratingAverage Decimal   @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount   Int       @default(0) @map("rating_count")
+  verifiedAt    DateTime? @map("verified_at") @db.Timestamptz(6)
+  suspendedAt   DateTime? @map("suspended_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner       User                @relation(fields: [ownerUserId], references: [id])
+  policy      BusinessPolicy?
+  outlets     Outlet[]
+  memberships BusinessMembership[]
+  invitations StaffInvitation[]
+  staff       StaffProfile[]
+  services    Service[]
+  bookings    Booking[]
+  payments    Payment[]
+  refunds     Refund[]
+  reviews     Review[]
+
+  @@index([status], map: "businesses_status_idx")
+  @@index([ownerUserId], map: "businesses_owner_idx")
+  @@map("businesses")
+}
+
+model BusinessPolicy {
+  businessId                 String   @id @map("business_id")
+  minimumLeadMinutes         Int      @default(60) @map("minimum_lead_minutes")
+  maximumAdvanceDays         Int      @default(30) @map("maximum_advance_days")
+  automaticConfirmation      Boolean  @default(true) @map("automatic_confirmation")
+  allowPayAtLocation         Boolean  @default(true) @map("allow_pay_at_location")
+  allowFullPayment           Boolean  @default(false) @map("allow_full_payment")
+  allowDeposit               Boolean  @default(false) @map("allow_deposit")
+  defaultDepositType         String   @default("none") @map("default_deposit_type")
+  defaultDepositValue        Int      @default(0) @map("default_deposit_value")
+  fullRefundBeforeMinutes    Int      @default(360) @map("full_refund_before_minutes")
+  partialRefundBeforeMinutes Int      @default(120) @map("partial_refund_before_minutes")
+  partialRefundPercentage    Int      @default(50) @map("partial_refund_percentage")
+  noShowRefundPercentage     Int      @default(0) @map("no_show_refund_percentage")
+  checkInEarlyMinutes        Int      @default(30) @map("check_in_early_minutes")
+  checkInLateMinutes         Int      @default(15) @map("check_in_late_minutes")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_policies")
+}
+
+model Outlet {
+  id               String   @id
+  businessId       String   @map("business_id")
+  name             String
+  phoneNumber      String?  @map("phone_number")
+  timezone         String   @default("Asia/Jakarta")
+  addressFormatted String   @map("address_formatted")
+  latitude         Decimal? @db.Decimal(9, 6)
+  longitude        Decimal? @db.Decimal(9, 6)
+  status           String   @default("active")
+  queuePrefix      String   @default("A") @map("queue_prefix")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business         Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffAssignments StaffOutlet[]
+  operatingHours   OutletOperatingHour[]
+  closedDates      ClosedDate[]
+  bookings         Booking[]
+
+  @@index([businessId, status], map: "outlets_business_status_idx")
+  @@map("outlets")
+}
+
+model BusinessMembership {
+  id          String    @id
+  businessId  String    @map("business_id")
+  userId      String    @map("user_id")
+  role        String
+  permissions Json      @default("[]")
+  status      String    @default("active")
+  joinedAt    DateTime? @map("joined_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffProfile StaffProfile?
+
+  @@unique([businessId, userId], map: "business_memberships_business_user_uq")
+  @@index([userId, status], map: "business_memberships_user_status_idx")
+  @@index([businessId, status], map: "business_memberships_business_status_idx")
+  @@map("business_memberships")
+}
+
+model StaffInvitation {
+  id                 String    @id
+  businessId         String    @map("business_id")
+  emailNormalized    String    @map("email_normalized")
+  displayName        String    @map("display_name")
+  role               String
+  permissions        Json      @default("[]")
+  outletIds          Json      @default("[]") @map("outlet_ids")
+  eligibleServiceIds Json      @default("[]") @map("eligible_service_ids")
+  tokenHash          String    @unique(map: "staff_invitations_token_hash_uq") @map("token_hash")
+  status             String    @default("pending")
+  invitedByUserId    String    @map("invited_by_user_id")
+  expiresAt          DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt         DateTime? @map("accepted_at") @db.Timestamptz(6)
+  acceptedByUserId   String?   @map("accepted_by_user_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invitedBy User     @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+  acceptedBy User?   @relation("AcceptedBy", fields: [acceptedByUserId], references: [id])
+
+  @@index([expiresAt], map: "staff_invitations_expires_idx")
+  @@map("staff_invitations")
+}
+
+model StaffProfile {
+  id            String   @id
+  businessId    String   @map("business_id")
+  membershipId  String   @unique @map("membership_id")
+  displayName   String   @map("display_name")
+  avatarFileId  String?  @map("avatar_file_id")
+  staffType     String   @default("barber") @map("staff_type")
+  status        String   @default("active")
+  ratingAverage Decimal  @default(0) @map("rating_average") @db.Decimal(3, 2)
+  ratingCount   Int      @default(0) @map("rating_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  membership        BusinessMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  outletAssignments StaffOutlet[]
+  serviceLinks      StaffService[]
+  schedules         StaffSchedule[]
+  bookings          Booking[]
+  reservations      BookingReservation[]
+  reviews           Review[]
+
+  @@index([businessId, status], map: "staff_profiles_business_status_idx")
+  @@map("staff_profiles")
+}
+
+model StaffOutlet {
+  staffId   String   @map("staff_id")
+  outletId  String   @map("outlet_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  staff  StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  outlet Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, outletId])
+  @@map("staff_outlets")
+}
+
+model Service {
+  id              String   @id
+  businessId      String   @map("business_id")
+  name            String
+  nameNormalized  String   @map("name_normalized")
+  description     String?
+  imageFileId     String?  @map("image_file_id")
+  durationMinutes Int      @map("duration_minutes")
+  priceAmount     Int      @map("price_amount")
+  currency        String   @default("IDR")
+  depositType     String   @default("none") @map("deposit_type")
+  depositValue    Int      @default(0) @map("deposit_value")
+  status          String   @default("active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffLinks StaffService[]
+  bookings   Booking[]
+
+  @@index([businessId, status, sortOrder], map: "services_business_status_sort_idx")
+  @@map("services")
+}
+
+model StaffService {
+  staffId   String   @map("staff_id")
+  serviceId String   @map("service_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  staff   StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+  @@map("staff_services")
+}
+
+model IdempotencyKey {
+  id                 String   @id
+  scopeType          String   @map("scope_type")
+  scopeId            String   @map("scope_id")
+  action             String
+  idempotencyKey     String   @map("idempotency_key")
+  requestFingerprint String   @map("request_fingerprint")
+  status             String
+  responseStatus     Int?     @map("response_status")
+  responseBody       Json?    @map("response_body")
+  resourceType       String?  @map("resource_type")
+  resourceId         String?  @map("resource_id")
+  errorCode          String?  @map("error_code")
+  expiresAt          DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([scopeType, scopeId, action, idempotencyKey], map: "idempotency_keys_scope_action_key_uq")
+  @@index([expiresAt], map: "idempotency_keys_expiry_idx")
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id           String   @id
+  actorUserId  String?  @map("actor_user_id")
+  actorType    String   @map("actor_type")
+  actorRole    String?  @map("actor_role")
+  businessId   String?  @map("business_id")
+  outletId     String?  @map("outlet_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String   @map("resource_id")
+  beforeData   Json?    @map("before_data")
+  afterData    Json?    @map("after_data")
+  reason       String?
+  requestId    String?  @map("request_id")
+  ipAddress    String?  @map("ip_address") @db.Inet
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([resourceType, resourceId, createdAt], map: "audit_logs_resource_idx")
+  @@index([businessId, createdAt(sort: Desc)], map: "audit_logs_business_created_idx")
+  @@map("audit_logs")
+}
+
+model OutletOperatingHour {
+  id          String    @id
+  outletId    String    @map("outlet_id")
+  dayOfWeek   Int       @map("day_of_week") @db.SmallInt
+  periodOrder Int       @default(0) @map("period_order") @db.SmallInt
+  opensAt     DateTime? @map("opens_at") @db.Time(6)
+  closesAt    DateTime? @map("closes_at") @db.Time(6)
+  isClosed    Boolean   @default(false) @map("is_closed")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([outletId, dayOfWeek, periodOrder], map: "outlet_operating_hours_period_uq")
+  @@map("outlet_operating_hours")
+}
+
+model StaffSchedule {
+  id          String    @id
+  staffId     String    @map("staff_id")
+  dayOfWeek   Int       @map("day_of_week") @db.SmallInt
+  periodOrder Int       @default(0) @map("period_order") @db.SmallInt
+  startsAt    DateTime? @map("starts_at") @db.Time(6)
+  endsAt      DateTime? @map("ends_at") @db.Time(6)
+  isAvailable Boolean   @default(true) @map("is_available")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  staff  StaffProfile         @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  breaks StaffScheduleBreak[]
+
+  @@unique([staffId, dayOfWeek, periodOrder], map: "staff_schedules_period_uq")
+  @@map("staff_schedules")
+}
+
+model StaffScheduleBreak {
+  id              String   @id
+  staffScheduleId String   @map("staff_schedule_id")
+  startsAt        DateTime @map("starts_at") @db.Time(6)
+  endsAt          DateTime @map("ends_at") @db.Time(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  schedule StaffSchedule @relation(fields: [staffScheduleId], references: [id], onDelete: Cascade)
+
+  @@map("staff_schedule_breaks")
+}
+
+model Booking {
+  id              String    @id
+  bookingCode     String    @map("booking_code")
+  customerUserId  String?   @map("customer_user_id")
+  businessId      String    @map("business_id")
+  outletId        String    @map("outlet_id")
+  serviceId       String    @map("service_id")
+  staffId         String?   @map("staff_id")
+  bookingType     String    @map("booking_type")
+  status          String
+  scheduledAt     DateTime? @map("scheduled_at") @db.Timestamptz(6)
+  expectedEndsAt  DateTime? @map("expected_ends_at") @db.Timestamptz(6)
+  checkedInAt     DateTime? @map("checked_in_at") @db.Timestamptz(6)
+  customerNotes   String?   @map("customer_notes")
+  internalNotes   String?   @map("internal_notes")
+  walkInCustomerName String? @map("walk_in_customer_name")
+  walkInPhoneNumber  String? @map("walk_in_phone_number")
+  paymentOption   String    @map("payment_option")
+  businessDate    DateTime  @map("business_date") @db.Date
+  version         Int       @default(1)
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(6)
+  noShowAt        DateTime? @map("no_show_at") @db.Timestamptz(6)
+  createdByUserId String?   @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  customer      User?                  @relation("CustomerBookings", fields: [customerUserId], references: [id])
+  createdBy     User?                  @relation("CreatedBookings", fields: [createdByUserId], references: [id])
+  business      Business               @relation(fields: [businessId], references: [id])
+  outlet        Outlet                 @relation(fields: [outletId], references: [id])
+  service       Service                @relation(fields: [serviceId], references: [id])
+  staff         StaffProfile?          @relation(fields: [staffId], references: [id])
+  snapshot      BookingSnapshot?
+  statusHistory BookingStatusHistory[]
+  reservation   BookingReservation?
+  payments      Payment[]
+  refunds       Refund[]
+  review        Review?
+
+  @@unique([businessId, bookingCode], map: "bookings_code_uq")
+  @@index([customerUserId, createdAt(sort: Desc)], map: "bookings_customer_created_idx")
+  @@index([businessId, businessDate, status], map: "bookings_business_date_idx")
+  @@index([outletId, businessDate, status], map: "bookings_outlet_date_idx")
+  @@index([status, scheduledAt], map: "bookings_status_scheduled_idx")
+  @@map("bookings")
+}
+
+model BookingSnapshot {
+  bookingId              String   @id @map("booking_id")
+  businessName           String   @map("business_name")
+  outletName             String   @map("outlet_name")
+  outletAddressFormatted String   @map("outlet_address_formatted")
+  outletTimezone         String   @map("outlet_timezone")
+  serviceName            String   @map("service_name")
+  serviceDurationMinutes Int      @map("service_duration_minutes")
+  servicePriceAmount     Int      @map("service_price_amount")
+  currency               String
+  depositType            String   @map("deposit_type")
+  depositValue           Int      @map("deposit_value")
+  requiredPaymentAmount  Int      @map("required_payment_amount")
+  staffName              String?  @map("staff_name")
+  cancellationPolicy     Json     @map("cancellation_policy")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_snapshots")
+}
+
+model BookingStatusHistory {
+  id          String   @id
+  bookingId   String   @map("booking_id")
+  fromStatus  String?  @map("from_status")
+  toStatus    String   @map("to_status")
+  actorUserId String?  @map("actor_user_id")
+  actorType   String   @map("actor_type")
+  reasonCode  String?  @map("reason_code")
+  reason      String?
+  metadata    Json     @default("{}")
+  requestId   String?  @map("request_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   User?   @relation("BookingStatusActor", fields: [actorUserId], references: [id])
+
+  @@index([bookingId, createdAt], map: "booking_status_history_booking_created_idx")
+  @@map("booking_status_history")
+}
+
+/// Overlap protection (ADR 0027). The tstzrange column + GiST exclusion
+/// constraint live in raw SQL only (Prisma cannot express them); rows are
+/// inserted with $executeRaw and read/deleted through this model.
+model BookingReservation {
+  bookingId String    @id @map("booking_id")
+  staffId   String    @map("staff_id")
+  outletId  String    @map("outlet_id")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  staff   StaffProfile @relation(fields: [staffId], references: [id])
+
+  @@index([staffId], map: "booking_reservations_staff_idx")
+  @@map("booking_reservations")
+}
+
+model BookingCodeCounter {
+  businessId   String   @map("business_id")
+  businessDate DateTime @map("business_date") @db.Date
+  lastNumber   Int      @default(0) @map("last_number")
+
+  @@id([businessId, businessDate])
+  @@map("booking_code_counters")
+}
+
+model Payment {
+  id                        String    @id
+  bookingId                 String    @map("booking_id")
+  businessId                String    @map("business_id")
+  customerUserId            String?   @map("customer_user_id")
+  provider                  String
+  providerReference         String?   @map("provider_reference")
+  paymentOption             String    @map("payment_option")
+  method                    String?
+  status                    String
+  amount                    Int
+  currency                  String    @default("IDR")
+  checkout                  Json?
+  providerCreationAttempts  Int       @default(0) @map("provider_creation_attempts")
+  providerCreationLastError String?   @map("provider_creation_last_error")
+  expiresAt                 DateTime? @map("expires_at") @db.Timestamptz(6)
+  paidAt                    DateTime? @map("paid_at") @db.Timestamptz(6)
+  failedAt                  DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt               DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  version                   Int       @default(1)
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking  Booking        @relation(fields: [bookingId], references: [id])
+  business Business       @relation(fields: [businessId], references: [id])
+  customer User?          @relation("CustomerPayments", fields: [customerUserId], references: [id])
+  events   PaymentEvent[]
+  refunds  Refund[]
+
+  @@index([bookingId, createdAt], map: "payments_booking_created_idx")
+  @@index([businessId, status, createdAt], map: "payments_business_status_idx")
+  @@map("payments")
+}
+
+model PaymentEvent {
+  id                  String    @id
+  paymentId           String?   @map("payment_id")
+  provider            String
+  providerEventId     String    @map("provider_event_id")
+  eventType           String    @map("event_type")
+  signatureValid      Boolean   @map("signature_valid")
+  amount              Int?
+  currency            String?
+  payload             Json
+  processingStatus    String    @default("received") @map("processing_status")
+  processingErrorCode String?   @map("processing_error_code")
+  processedAt         DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([provider, providerEventId], map: "payment_events_provider_event_uq")
+  @@index([paymentId, createdAt], map: "payment_events_payment_created_idx")
+  @@index([processingStatus, createdAt], map: "payment_events_status_created_idx")
+  @@map("payment_events")
+}
+
+model Refund {
+  id                String    @id
+  paymentId         String    @map("payment_id")
+  bookingId         String    @map("booking_id")
+  businessId        String    @map("business_id")
+  requestedByUserId String?   @map("requested_by_user_id")
+  providerReference String?   @map("provider_reference")
+  status            String
+  amount            Int
+  currency          String    @default("IDR")
+  reasonCode        String    @map("reason_code")
+  reason            String?
+  requestedAt       DateTime  @map("requested_at") @db.Timestamptz(6)
+  processedAt       DateTime? @map("processed_at") @db.Timestamptz(6)
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz(6)
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  business    Business @relation(fields: [businessId], references: [id])
+  requestedBy User?    @relation("RequestedRefunds", fields: [requestedByUserId], references: [id])
+  events      RefundEvent[]
+
+  @@index([paymentId, createdAt], map: "refunds_payment_created_idx")
+  @@index([businessId, status, createdAt], map: "refunds_business_status_idx")
+  @@map("refunds")
+}
+
+model RefundEvent {
+  id               String    @id
+  refundId         String?   @map("refund_id")
+  provider         String
+  providerEventId  String    @map("provider_event_id")
+  eventType        String    @map("event_type")
+  payload          Json
+  processingStatus String    @default("received") @map("processing_status")
+  processedAt      DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  refund Refund? @relation(fields: [refundId], references: [id])
+
+  @@unique([provider, providerEventId], map: "refund_events_provider_event_uq")
+  @@map("refund_events")
+}
+
+model ClosedDate {
+  id              String   @id
+  outletId        String   @map("outlet_id")
+  closedDate      DateTime @map("closed_date") @db.Date
+  reason          String?
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  outlet    Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdByUserId], references: [id])
+
+  @@unique([outletId, closedDate], map: "closed_dates_outlet_date_uq")
+  @@index([closedDate], map: "closed_dates_date_idx")
+  @@map("closed_dates")
+}
+
+// Queue models (database-design §37–§41). Plain scalar FKs (no Prisma relations):
+// the migration owns referential integrity; queue mutations query by explicit id.
+model QueueCounter {
+  outletId     String   @map("outlet_id")
+  businessDate DateTime @map("business_date") @db.Date
+  lastNumber   Int      @default(0) @map("last_number")
+  version      Int      @default(1)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([outletId, businessDate])
+  @@map("queue_counters")
+}
+
+model QueueEntry {
+  id               String    @id
+  bookingId        String    @unique(map: "queue_entries_booking_uq") @map("booking_id")
+  businessId       String    @map("business_id")
+  outletId         String    @map("outlet_id")
+  staffId          String?   @map("staff_id")
+  businessDate     DateTime  @map("business_date") @db.Date
+  queueNumber      Int       @map("queue_number")
+  displayNumber    String    @map("display_number")
+  status           String
+  sortOrder        Int       @map("sort_order")
+  checkedInAt      DateTime  @map("checked_in_at") @db.Timestamptz(6)
+  calledAt         DateTime? @map("called_at") @db.Timestamptz(6)
+  lastRecalledAt   DateTime? @map("last_recalled_at") @db.Timestamptz(6)
+  recallCount      Int       @default(0) @map("recall_count")
+  serviceStartedAt DateTime? @map("service_started_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  noShowAt         DateTime? @map("no_show_at") @db.Timestamptz(6)
+  cancelledAt      DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("queue_entries")
+}
+
+model QueueStatusHistory {
+  id           String   @id
+  queueEntryId String   @map("queue_entry_id")
+  fromStatus   String?  @map("from_status")
+  toStatus     String   @map("to_status")
+  actorUserId  String?  @map("actor_user_id")
+  actorType    String   @map("actor_type")
+  reason       String?
+  metadata     Json     @default("{}")
+  requestId    String?  @map("request_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("queue_status_history")
+}
+
+model QueueReorder {
+  id            String   @id
+  businessId    String   @map("business_id")
+  outletId      String   @map("outlet_id")
+  businessDate  DateTime @map("business_date") @db.Date
+  actorUserId   String   @map("actor_user_id")
+  previousOrder Json     @map("previous_order")
+  newOrder      Json     @map("new_order")
+  reason        String
+  requestId     String?  @map("request_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("queue_reorders")
+}
+
+// Transactional outbox (database-design §49–§50). Written inside business
+// transactions; drained by the in-process dispatcher. Indexes live in the
+// migration (partial `due` index Prisma DSL can't express).
+model OutboxEvent {
+  id            String    @id
+  eventType     String    @map("event_type")
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  payload       Json
+  status        String    @default("pending")
+  attemptCount  Int       @default(0) @map("attempt_count")
+  nextAttemptAt DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimedAt     DateTime? @map("claimed_at") @db.Timestamptz(6)
+  claimedBy     String?   @map("claimed_by")
+  processedAt   DateTime? @map("processed_at") @db.Timestamptz(6)
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("outbox_events")
+}
+
+model Review {
+  id                String    @id
+  bookingId         String    @unique(map: "reviews_booking_uq") @map("booking_id")
+  businessId        String    @map("business_id")
+  customerUserId    String    @map("customer_user_id")
+  staffId           String?   @map("staff_id")
+  rating            Int       @db.SmallInt
+  comment           String?
+  status            String    @default("published")
+  moderatedAt       DateTime? @map("moderated_at") @db.Timestamptz(6)
+  moderatedByUserId String?   @map("moderated_by_user_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+  business    Business      @relation(fields: [businessId], references: [id])
+  customer    User          @relation("CustomerReviews", fields: [customerUserId], references: [id])
+  staff       StaffProfile? @relation(fields: [staffId], references: [id])
+  moderatedBy User?         @relation("ModeratedReviews", fields: [moderatedByUserId], references: [id])
+
+  @@index([businessId, status, createdAt(sort: Desc)], map: "reviews_business_status_created_idx")
+  @@map("reviews")
 }
