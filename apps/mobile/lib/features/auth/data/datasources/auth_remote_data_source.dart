@@ -110,7 +110,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ApiEndpoints.meDevice(deviceId),
         // pushToken is the OneSignal subscription id; omitted when push is
         // unconfigured so the backend keeps the row token-less (no delivery).
-        data: {'platform': platform, 'locale': ?locale, 'pushToken': ?pushToken},
+        data: {
+          'platform': platform,
+          'locale': ?locale,
+          'pushToken': ?pushToken,
+        },
       ),
     );
   }
