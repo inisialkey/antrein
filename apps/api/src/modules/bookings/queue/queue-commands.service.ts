@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { newId } from '../../../common/id/id';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { MetricsService } from '../../../infrastructure/metrics/metrics.service';
 import { AuditService } from '../../audit/audit.service';
-import { validationFailed } from '../../auth/auth.errors';
+import { ApiError, validationFailed } from '../../auth/auth.errors';
 import { businessNotActive, outletNotFound } from '../../businesses/business.errors';
 import { IdempotencyService } from '../../idempotency/idempotency.service';
 import { businessNotFound } from '../../memberships/membership.errors';
@@ -68,6 +69,8 @@ export class QueueCommandsService {
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
     private readonly audit: AuditService,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -700,7 +703,11 @@ export class QueueCommandsService {
       action: `queue_reorder:${outletId}:${dto.businessDate}`,
       key: idempotencyKey,
       payload: dto,
-      run: () => this.reorderRun(actorUserId, businessId, outletId, dto),
+      run: async () => {
+        const result = await this.reorderRun(actorUserId, businessId, outletId, dto);
+        this.metrics?.inc('queue_reorder_total');
+        return result;
+      },
     });
   }
 
@@ -808,20 +815,32 @@ export class QueueCommandsService {
         if (!entry) throw queueEntryNotFound();
         // Knowing the id is not permission: the entry must belong to the business.
         if (entry.businessId !== businessId) throw forbiddenQueueResource();
-        return this.prisma.$transaction(async (tx) => {
-          const result = await handler(tx, entry, new Date());
-          // Every versioned command touches this entry — one marker per command
-          // fans out to the customer + staff snapshot events (§49). Call and
-          // recall are the push-worthy ones (realtime-queue §54).
-          await enqueueQueueEvent(tx, {
-            queueEntryId: entry.id,
-            bookingId: entry.bookingId,
-            outletId: entry.outletId,
-            businessDate: entry.businessDate,
-            push: action === 'queue_call' || action === 'queue_recall' ? 'called' : undefined,
+        try {
+          const outcome = await this.prisma.$transaction(async (tx) => {
+            const result = await handler(tx, entry, new Date());
+            // Every versioned command touches this entry — one marker per command
+            // fans out to the customer + staff snapshot events (§49). Call and
+            // recall are the push-worthy ones (realtime-queue §54).
+            await enqueueQueueEvent(tx, {
+              queueEntryId: entry.id,
+              bookingId: entry.bookingId,
+              outletId: entry.outletId,
+              businessDate: entry.businessDate,
+              push: action === 'queue_call' || action === 'queue_recall' ? 'called' : undefined,
+            });
+            return result;
           });
-          return result;
-        });
+          this.metrics?.inc(`${action}_total`);
+          return outcome;
+        } catch (error) {
+          // ApiError carries its stable code inside the HttpException response body.
+          const code =
+            error instanceof ApiError ? (error.getResponse() as { code?: string }).code : undefined;
+          if (code === 'QUEUE_VERSION_CONFLICT') {
+            this.metrics?.inc('queue_version_conflict_total');
+          }
+          throw error;
+        }
       },
     });
   }

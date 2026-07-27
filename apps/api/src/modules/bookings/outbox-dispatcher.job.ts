@@ -1,7 +1,8 @@
 import { hostname } from 'node:os';
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { MetricsService } from '../../infrastructure/metrics/metrics.service';
 import {
   ClaimedOutboxRow,
   claimOutboxBatch,
@@ -32,6 +33,8 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
     private readonly config: ConfigService,
     private readonly publisher: RealtimePublisherPort,
     private readonly notifications: NotificationsService,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   onModuleInit(): void {
@@ -62,6 +65,7 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
         await this.dispatch(row);
         delivered.push(row.id);
       } catch (error) {
+        this.metrics?.inc('queue_event_publish_failure_total');
         await markOutboxFailed(this.prisma, {
           id: row.id,
           attemptCount: row.attemptCount,
@@ -70,6 +74,7 @@ export class OutboxDispatcherJob implements OnModuleInit, OnModuleDestroy {
       }
     }
     await markOutboxProcessed(this.prisma, delivered);
+    if (delivered.length > 0) this.metrics?.inc('outbox_dispatched_total', delivered.length);
     return delivered.length;
   }
 

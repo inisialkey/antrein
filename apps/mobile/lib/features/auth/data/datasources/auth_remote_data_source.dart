@@ -28,6 +28,7 @@ abstract class AuthRemoteDataSource {
     required String deviceId,
     required String platform,
     String? locale,
+    String? pushToken,
   });
 
   Future<void> signOut({String? refreshToken, String? deviceId});
@@ -102,11 +103,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String deviceId,
     required String platform,
     String? locale,
+    String? pushToken,
   }) async {
     await _send(
       () => _dio.put<dynamic>(
         ApiEndpoints.meDevice(deviceId),
-        data: {'platform': platform, 'locale': ?locale},
+        // pushToken is the OneSignal subscription id; omitted when push is
+        // unconfigured so the backend keeps the row token-less (no delivery).
+        data: {'platform': platform, 'locale': ?locale, 'pushToken': ?pushToken},
       ),
     );
   }

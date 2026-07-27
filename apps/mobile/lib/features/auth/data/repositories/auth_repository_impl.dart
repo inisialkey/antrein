@@ -4,6 +4,7 @@ import 'package:antrein/core/device/device_id_store.dart';
 import 'package:antrein/core/error/exceptions.dart';
 import 'package:antrein/core/error/failures.dart';
 import 'package:antrein/core/logging/app_logger.dart';
+import 'package:antrein/core/push/push_service.dart';
 import 'package:antrein/core/storage/token_storage.dart';
 import 'package:antrein/core/utils/typedefs.dart';
 import 'package:antrein/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -15,11 +16,17 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AuthRepository)
 class AuthRepositoryImpl implements AuthRepository {
-  const AuthRepositoryImpl(this._remote, this._storage, this._deviceIds);
+  const AuthRepositoryImpl(
+    this._remote,
+    this._storage,
+    this._deviceIds,
+    this._push,
+  );
 
   final AuthRemoteDataSource _remote;
   final TokenStorage _storage;
   final DeviceIdStore _deviceIds;
+  final PushService _push;
 
   static String get _platform => Platform.isIOS ? 'ios' : 'android';
 
@@ -37,6 +44,9 @@ class AuthRepositoryImpl implements AuthRepository {
         platform: _platform,
       ),
       'signIn',
+      // Login upserts the device row but carries no push token — the follow-up
+      // PUT enriches it with the OneSignal subscription id.
+      registerDevice: true,
     );
   }
 
@@ -78,6 +88,12 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  @override
+  ResultVoid syncDevice() async {
+    await _registerDeviceBestEffort();
+    return const Right(null);
+  }
+
   /// Device bookkeeping never blocks or fails an authentication.
   Future<void> _registerDeviceBestEffort() async {
     try {
@@ -85,6 +101,7 @@ class AuthRepositoryImpl implements AuthRepository {
         deviceId: await _deviceIds.obtain(),
         platform: _platform,
         locale: Platform.localeName.replaceAll('_', '-'),
+        pushToken: _push.pushToken,
       );
     } on Object catch (e) {
       AppLogger.w('Device registration failed; continuing', error: e);

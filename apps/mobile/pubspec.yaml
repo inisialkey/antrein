@@ -48,6 +48,8 @@ dependencies:
   # Native splash held through async bootstrap; preserve()/remove() at runtime.
   flutter_native_splash: ^2.4.0
 
+  onesignal_flutter: ^5.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

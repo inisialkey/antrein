@@ -7,8 +7,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { BusinessBookingsController } from './business-bookings.controller';
+import { ConsistencyCheckJob } from './consistency-check.job';
 import { OutboxDispatcherJob } from './outbox-dispatcher.job';
 import { PaymentExpirationJob } from './payment-expiration.job';
+import { PaymentReconciliationJob } from './payment-reconciliation.job';
 import { PaymentTransitionService } from './payment-transition.service';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
@@ -46,6 +48,8 @@ import { QueueService } from './queue/queue.service';
     PaymentTransitionService,
     RefundsService,
     PaymentExpirationJob,
+    PaymentReconciliationJob,
+    ConsistencyCheckJob,
     OutboxDispatcherJob,
     QueueService,
     QueueCommandsService,

@@ -11,6 +11,7 @@ import {
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { Public } from '../auth/public.decorator';
+import { MetricsService } from '../../infrastructure/metrics/metrics.service';
 import { PaymentProviderPort } from '../../infrastructure/payments/payment-provider.port';
 import { ProviderWebhookError } from '../../infrastructure/payments/sandbox.adapter';
 import { PaymentTransitionService } from './payment-transition.service';
@@ -30,6 +31,8 @@ export class WebhooksController {
     @Optional()
     @Inject(PaymentProviderPort)
     private readonly provider: PaymentProviderPort | null,
+    @Optional()
+    private readonly metrics?: MetricsService,
   ) {}
 
   @Post(':provider')
@@ -59,6 +62,9 @@ export class WebhooksController {
     }
 
     const applied = await this.transitions.applyProviderEvent(event, { signatureValid: true });
+    this.metrics?.inc('payment_webhook_total');
+    if (applied.outcome === 'duplicate') this.metrics?.inc('payment_webhook_duplicate_total');
+    if (applied.outcome === 'manual_review') this.metrics?.inc('payment_webhook_failure_total');
     if (applied.lateRefund) {
       // ADR 0040: refund a verified success that arrived after the slot was
       // released — runs outside the transition transaction (provider call).
