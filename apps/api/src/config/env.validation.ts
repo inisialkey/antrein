@@ -57,6 +57,15 @@ export class EnvironmentVariables {
   @Min(5)
   RESET_TOKEN_TTL_MINUTES = 30;
 
+  /**
+   * 'true' when the API sits behind exactly one TLS reverse proxy (ADR 0045).
+   * Without it Express reports the proxy's IP for every request, which would
+   * collapse the per-IP auth rate-limit buckets into one shared bucket.
+   */
+  @IsOptional()
+  @IsString()
+  TRUST_PROXY?: string;
+
   @IsOptional()
   @IsString()
   SMTP_HOST?: string;
@@ -64,6 +73,20 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   SMTP_PORT = 1025;
+
+  /** ESP relay credentials (ADR 0045); unset locally so Mailpit needs no auth. */
+  @IsOptional()
+  @IsString()
+  SMTP_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  SMTP_PASSWORD?: string;
+
+  /** 'true' for implicit TLS (port 465); STARTTLS on 587 needs no flag. */
+  @IsOptional()
+  @IsString()
+  SMTP_SECURE?: string;
 
   @IsOptional()
   @IsString()
@@ -143,6 +166,41 @@ const NUMERIC_KEYS = [
   'CONSISTENCY_CHECK_INTERVAL_MS',
 ] as const;
 
+/** Committed placeholders (.env.example, class defaults) — fatal in production. */
+const PLACEHOLDER_SECRETS = new Set([
+  'dev-only-jwt-secret-3f5553520b7c6462608089304169bd8944827c11d597b16b',
+  'sandbox-webhook-secret',
+]);
+
+/**
+ * Backend-brief §94 "strong secrets": a committed placeholder that boots fine
+ * locally must never reach production. Checked after class-validator so the
+ * message lists every problem at once.
+ */
+function assertProductionConfig(env: EnvironmentVariables): void {
+  const problems: string[] = [];
+
+  if (PLACEHOLDER_SECRETS.has(env.JWT_ACCESS_SECRET)) {
+    problems.push('JWT_ACCESS_SECRET is the committed example secret');
+  }
+  if (PLACEHOLDER_SECRETS.has(env.PAYMENT_WEBHOOK_SECRET)) {
+    problems.push('PAYMENT_WEBHOOK_SECRET is the default sandbox secret');
+  }
+  if (!env.SMTP_HOST) {
+    problems.push('SMTP_HOST is required (password reset is delivered over SMTP)');
+  }
+  if (env.METRICS_ENABLED === 'true' && !env.METRICS_TOKEN) {
+    problems.push('METRICS_TOKEN is required whenever METRICS_ENABLED=true');
+  }
+  if (env.AUTH_RATE_LIMIT_DISABLED === 'true') {
+    problems.push('AUTH_RATE_LIMIT_DISABLED is a test-only escape hatch');
+  }
+
+  if (problems.length > 0) {
+    throw new Error(`Invalid production configuration — ${problems.join('; ')}`);
+  }
+}
+
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
   // Env values arrive as strings; coerce numerics explicitly instead of relying
   // on class-transformer implicit conversion (breaks under ts-jest metadata).
@@ -162,6 +220,9 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
       .map((e) => `${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`)
       .join('; ');
     throw new Error(`Invalid environment configuration — ${details}`);
+  }
+  if (validated.NODE_ENV === NodeEnv.Production) {
+    assertProductionConfig(validated);
   }
   return validated;
 }

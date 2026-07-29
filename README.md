@@ -27,6 +27,23 @@ API base: `http://localhost:3000/api/v1` · Health: `/health/live`, `/health/rea
 | `make test-integration` | Integration tests against real PostgreSQL (`antrein_test`) |
 | `make migrate` | Apply migrations |
 | `make seed` | Seed development data |
+| `make seed-demo` | Seed the demo business, catalog, staff and logins |
+| `make docker-build` | Build the production image locally |
+| `make mobile-dev` | Run the Flutter app against the dev flavor |
+
+## Deployment
+
+Self-hosted VPS: Caddy (TLS) + API + PostgreSQL in one Docker Compose stack —
+see `docs/adr/0045-self-hosted-vps-deployment.md` for the topology and
+`docs/ops/runbook.md` for setup, deploys, backups and incident playbooks.
+
+```bash
+# on the VPS, once deploy/ is copied and .env filled in
+./deploy.sh          # pull → migrate → restart
+```
+
+Pushing to `main` builds the image, scans it with Trivy, pushes it to GHCR and
+runs that same script over SSH (`.github/workflows/deploy.yml`).
 
 ## Documentation
 

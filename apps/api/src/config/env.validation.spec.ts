@@ -31,4 +31,45 @@ describe('validateEnv', () => {
   it('rejects non-numeric PORT', () => {
     expect(() => validateEnv({ ...minimal, PORT: 'abc' })).toThrow(/PORT/);
   });
+
+  describe('production guards', () => {
+    const production = {
+      ...minimal,
+      NODE_ENV: 'production',
+      PAYMENT_WEBHOOK_SECRET: 'a-real-webhook-secret',
+      SMTP_HOST: 'smtp.example.com',
+    };
+
+    it('accepts a fully configured production environment', () => {
+      expect(() => validateEnv(production)).not.toThrow();
+    });
+
+    it('rejects the committed example secrets', () => {
+      expect(() =>
+        validateEnv({
+          ...production,
+          JWT_ACCESS_SECRET: 'dev-only-jwt-secret-3f5553520b7c6462608089304169bd8944827c11d597b16b',
+        }),
+      ).toThrow(/JWT_ACCESS_SECRET/);
+      expect(() =>
+        validateEnv({ ...production, PAYMENT_WEBHOOK_SECRET: 'sandbox-webhook-secret' }),
+      ).toThrow(/PAYMENT_WEBHOOK_SECRET/);
+    });
+
+    it('requires SMTP_HOST, a metrics token when metrics are on, and live rate limits', () => {
+      expect(() => validateEnv({ ...production, SMTP_HOST: undefined })).toThrow(/SMTP_HOST/);
+      expect(() => validateEnv({ ...production, METRICS_ENABLED: 'true' })).toThrow(
+        /METRICS_TOKEN/,
+      );
+      expect(() => validateEnv({ ...production, AUTH_RATE_LIMIT_DISABLED: 'true' })).toThrow(
+        /AUTH_RATE_LIMIT_DISABLED/,
+      );
+    });
+
+    it('leaves non-production environments alone', () => {
+      expect(() =>
+        validateEnv({ ...minimal, NODE_ENV: 'development', AUTH_RATE_LIMIT_DISABLED: 'true' }),
+      ).not.toThrow();
+    });
+  });
 });

@@ -1,7 +1,8 @@
 API_DIR = apps/api
+MOBILE_DIR = apps/mobile
 TEST_DATABASE_URL = postgresql://postgres:postgres@localhost:5432/antrein_test
 
-.PHONY: bootstrap dev test test-integration migrate seed
+.PHONY: bootstrap dev test test-integration migrate seed seed-demo docker-build mobile-dev mobile-staging mobile-production
 
 bootstrap:
 	cd $(API_DIR) && npm install
@@ -27,3 +28,21 @@ migrate:
 
 seed:
 	cd $(API_DIR) && npm run seed
+
+# Demo catalog + logins (ADR 0045); point DATABASE_URL at the target database.
+seed-demo:
+	cd $(API_DIR) && npm run seed:demo
+
+# Same build CI and the VPS run — catches Dockerfile breakage locally.
+docker-build:
+	cd $(API_DIR) && docker build --build-arg GIT_SHA=$$(git rev-parse --short HEAD) -t antrein-api:local .
+
+# Flavors carry dart-defines only — no native productFlavors, so no --flavor flag.
+mobile-dev:
+	cd $(MOBILE_DIR) && flutter run -t lib/main_dev.dart --dart-define-from-file=config/flavors/dev.json
+
+mobile-staging:
+	cd $(MOBILE_DIR) && flutter run -t lib/main_staging.dart --dart-define-from-file=config/flavors/staging.json
+
+mobile-production:
+	cd $(MOBILE_DIR) && flutter run -t lib/main_production.dart --dart-define-from-file=config/flavors/production.json

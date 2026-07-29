@@ -1,0 +1,7 @@
+# Automatic Let's Encrypt certificates: HTTPS for REST and WSS for /realtime
+# (reverse_proxy passes Upgrade through untouched).
+{$API_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy api:3000
+}

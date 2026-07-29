@@ -71,6 +71,11 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Audit production dependencies
+        # backend-brief §94 dependency scanning. Dev-only advisories never ship
+        # in the image, so the gate covers the production tree.
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Format check
         run: npm run format:check
 
@@ -94,3 +99,7 @@ jobs:
 
       - name: Generate OpenAPI
         run: npm run openapi:generate
+
+      - name: Build container image
+        # Catches Dockerfile breakage on the PR instead of at deploy time.
+        run: docker build -t antrein-api:ci .

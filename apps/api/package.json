@@ -16,7 +16,14 @@
     "test": "jest",
     "test:integration": "jest --config jest.integration.config.cjs --runInBand",
     "openapi:generate": "ts-node scripts/generate-openapi.ts",
-    "seed": "ts-node prisma/seed/seed.ts"
+    "seed": "ts-node prisma/seed/seed.ts",
+    "seed:demo": "ts-node prisma/seed/demo.ts"
+  },
+  "comment:overrides": "GHSA-pm4m-ph32-ghv5 — js-yaml <=5.2.1 DoS. Scoped to @nestjs/swagger so the CLI's js-yaml@4 tree is untouched. Drop when swagger ships the bump.",
+  "overrides": {
+    "@nestjs/swagger": {
+      "js-yaml": "^5.2.2"
+    }
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",

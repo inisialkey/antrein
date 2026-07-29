@@ -15,10 +15,17 @@ export class SmtpEmailService extends EmailPort {
 
   constructor(config: ConfigService) {
     super();
+    // ADR 0045: the deployed stack points at an ESP's SMTP relay. Auth is sent
+    // only when SMTP_USER is set, so Mailpit keeps working locally unchanged.
+    const user = config.get<string>('SMTP_USER');
     this.transporter = createTransport({
       host: config.get<string>('SMTP_HOST') ?? 'localhost',
       port: config.get<number>('SMTP_PORT') ?? 1025,
-      secure: false,
+      secure: config.get<string>('SMTP_SECURE') === 'true',
+      // Credentials never travel in the clear: on the STARTTLS port, refuse to
+      // send if the relay does not upgrade. Mailpit (no auth) is unaffected.
+      requireTLS: Boolean(user),
+      auth: user ? { user, pass: config.get<string>('SMTP_PASSWORD') } : undefined,
     });
     this.from = config.get<string>('EMAIL_FROM') ?? 'AntreIn <no-reply@antrein.local>';
   }

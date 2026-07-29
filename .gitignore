@@ -5,6 +5,8 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
+# Templates carry no secrets and must ship with the repo.
+!.env*.example
 
 # Local agent tooling (not part of the project)
 .agents/
