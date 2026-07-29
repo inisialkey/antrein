@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+test
+.env
+.env.*
+*.log
+*.md
+eslint.config.mjs
+jest.config.cjs
+jest.integration.config.cjs
+scripts
+# Regenerated inside the image by `prisma generate`.
+src/generated

@@ -1,0 +1,69 @@
+name: Deploy
+
+# Release flow per ADR 0045: main → image → scan → push → VPS.
+# Third-party marketplace actions are deliberately avoided here (the trivy-action
+# tags were hijacked in March 2026); the scanner runs from a pinned image.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "deploy/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/antrein-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        run: docker build --build-arg GIT_SHA=${{ github.sha }} -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" apps/api
+
+      - name: Scan image
+        # backend-brief §94 container scanning. Runs before the push so a
+        # vulnerable image is never published; --ignore-unfixed keeps the gate
+        # actionable (only advisories with an available fix fail the build).
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.72.0 image \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            "$IMAGE:${{ github.sha }}"
+
+      - name: Push image
+        run: |
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+  deploy:
+    needs: release
+    # Skipped until the VPS coordinates are configured as repository variables,
+    # so the workflow is green before the server exists.
+    if: vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Authorize SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Pull, migrate, restart
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}" \
+            "cd '${{ vars.DEPLOY_PATH }}' && API_IMAGE=ghcr.io/${{ github.repository_owner }}/antrein-api:${{ github.sha }} ./deploy.sh"

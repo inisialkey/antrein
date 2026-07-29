@@ -1,0 +1,88 @@
+# Production stack for the self-hosted VPS (ADR 0045).
+# Copy this directory to the VPS, create .env from .env.prod.example, then
+# ./deploy.sh. Secrets live only in that .env, never in the image or the repo.
+name: antrein
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/inisialkey/antrein-api:latest}
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Exactly one proxy hop (caddy) — see ADR 0045 and env.validation.ts.
+      TRUST_PROXY: "true"
+    # Never published to the host: Caddy is the only way in.
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Loopback only: reachable through an SSH tunnel for seeding and psql,
+    # never from the internet (docs/ops/runbook.md §4).
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # One-shot, run by deploy.sh before the API restarts (ADR 0045 §5:
+  # migrations are explicit, never applied on container boot).
+  migrate:
+    image: ${API_IMAGE:-ghcr.io/inisialkey/antrein-api:latest}
+    profiles:
+      - migrate
+    restart: "no"
+    env_file:
+      - .env
+    command: ["npx", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# Redis is deliberately absent — single instance (ADR 0036/0045). Add the
+# service plus REDIS_URL in .env the day a second API instance exists.
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
