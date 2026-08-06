@@ -1,5 +1,6 @@
 import 'package:antrein/core/config/app_config.dart';
 import 'package:antrein/core/network/interceptors/auth_interceptor.dart';
+import 'package:antrein/core/network/interceptors/logging_interceptor.dart';
 import 'package:antrein/core/network/interceptors/refresh_interceptor.dart';
 import 'package:antrein/core/storage/token_storage.dart';
 import 'package:dio/dio.dart';
@@ -11,7 +12,8 @@ abstract class NetworkModule {
   /// `/auth/refresh` cannot recurse back into [RefreshInterceptor].
   @Named('refreshDio')
   @lazySingleton
-  Dio refreshDio(AppConfig config) => Dio(_baseOptions(config));
+  Dio refreshDio(AppConfig config) =>
+      Dio(_baseOptions(config))..interceptors.add(LoggingInterceptor());
 
   /// The app Dio: attaches the bearer token and refreshes-and-retries on 401.
   @lazySingleton
@@ -24,6 +26,9 @@ abstract class NetworkModule {
     dio.interceptors.addAll([
       AuthInterceptor(storage),
       RefreshInterceptor(storage, dio, refreshDio),
+      // Last, so the request line shows the headers actually sent. A 401 that
+      // triggers a refresh is logged by the replayed request instead.
+      LoggingInterceptor(),
     ]);
     return dio;
   }

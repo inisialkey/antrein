@@ -1,6 +1,7 @@
 import 'package:antrein/core/error/exceptions.dart';
 import 'package:antrein/core/network/api_endpoints.dart';
 import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/network/envelope.dart';
 import 'package:antrein/features/auth/data/models/auth_result.dart';
 import 'package:antrein/features/auth/data/models/user_model.dart';
 import 'package:dio/dio.dart';
@@ -162,7 +163,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       return _unwrap(await request());
     } on DioException catch (error) {
-      throw _mapTransportError(error);
+      throw mapTransportError(error);
     }
   }
 
@@ -212,25 +213,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return status == 401
             ? AuthException(message)
             : ServerException(message);
-    }
-  }
-
-  Exception _mapTransportError(DioException error) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.transformTimeout:
-        return const NetworkException('The request timed out.');
-      case DioExceptionType.connectionError:
-        return const NetworkException('No internet connection.');
-      case DioExceptionType.badResponse:
-      case DioExceptionType.cancel:
-      case DioExceptionType.badCertificate:
-      case DioExceptionType.unknown:
-        return ServerException(
-          errorMessageOf(error.response?.data, fallback: 'Server error.'),
-        );
     }
   }
 }

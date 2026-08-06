@@ -13,7 +13,7 @@ Future<Map<String, dynamic>> sendEnvelope(
   try {
     response = await request();
   } on DioException catch (error) {
-    throw _mapTransportError(error);
+    throw mapTransportError(error);
   }
 
   final body = response.data;
@@ -38,7 +38,7 @@ Future<Map<String, dynamic>> sendEnvelopeRaw(
   try {
     response = await request();
   } on DioException catch (error) {
-    throw _mapTransportError(error);
+    throw mapTransportError(error);
   }
   final body = response.data;
   final status = response.statusCode ?? 0;
@@ -73,7 +73,14 @@ Exception mapEnvelopeError({
   };
 }
 
-Exception _mapTransportError(DioException error) {
+/// Transport (no HTTP response) → typed exception, shared by every data source.
+///
+/// `connectionError` covers a refused, unroutable or unresolvable host just as
+/// much as a device with no network, so the message must not claim the device
+/// is offline — a reachable phone pointed at a stopped API hits this too. The
+/// distinguishing detail (OS error, host, port) goes to the log, not the UI:
+/// see `LoggingInterceptor`.
+Exception mapTransportError(DioException error) {
   switch (error.type) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.sendTimeout:
@@ -81,7 +88,9 @@ Exception _mapTransportError(DioException error) {
     case DioExceptionType.transformTimeout:
       return const NetworkException('The request timed out.');
     case DioExceptionType.connectionError:
-      return const NetworkException('No internet connection.');
+      return const NetworkException(
+        'Cannot reach the server. Check your connection and try again.',
+      );
     case DioExceptionType.badResponse:
     case DioExceptionType.cancel:
     case DioExceptionType.badCertificate:
