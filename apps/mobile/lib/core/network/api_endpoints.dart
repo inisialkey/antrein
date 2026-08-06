@@ -63,6 +63,13 @@ abstract final class ApiEndpoints {
   static String payAtLocationConfirm(String businessId, String bookingId) =>
       '/businesses/$businessId/bookings/$bookingId/payments/pay-at-location/confirm';
 
+  // Notifications (contract §92–§95). The §93 single-get is omitted: the list
+  // returns the full resource, so the inbox never needs to re-read one row.
+  static const String notifications = '/notifications';
+  static const String notificationsReadAll = '/notifications/read-all';
+  static String notificationRead(String notificationId) =>
+      '/notifications/$notificationId/read';
+
   // Payments
   static String paymentRefresh(String paymentId) =>
       '/payments/$paymentId/refresh';
