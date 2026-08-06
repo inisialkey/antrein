@@ -27,6 +27,7 @@ class StaffQueuePage extends StatelessWidget {
     required this.membershipOutletIds,
     required this.canManage,
     required this.canReorder,
+    this.canViewBookings = false,
     this.canViewReports = false,
     this.businessName,
     super.key,
@@ -36,6 +37,7 @@ class StaffQueuePage extends StatelessWidget {
   final List<String> membershipOutletIds;
   final bool canManage;
   final bool canReorder;
+  final bool canViewBookings;
   final bool canViewReports;
   final String? businessName;
 
@@ -55,6 +57,7 @@ class StaffQueuePage extends StatelessWidget {
       businessId: businessId,
       canManage: canManage,
       canReorder: canReorder,
+      canViewBookings: canViewBookings,
       canViewReports: canViewReports,
       businessName: businessName,
     ),
@@ -66,6 +69,7 @@ class _StaffQueueView extends StatelessWidget {
     required this.businessId,
     required this.canManage,
     required this.canReorder,
+    required this.canViewBookings,
     required this.canViewReports,
     this.businessName,
   });
@@ -73,6 +77,7 @@ class _StaffQueueView extends StatelessWidget {
   final String businessId;
   final bool canManage;
   final bool canReorder;
+  final bool canViewBookings;
   final bool canViewReports;
   final String? businessName;
 
@@ -83,27 +88,42 @@ class _StaffQueueView extends StatelessWidget {
       appBar: AppBar(
         title: Text(businessName ?? l10n.queueTitle),
         actions: [
-          if (canViewReports)
+          if (canViewBookings || canViewReports)
             Builder(
               builder: (context) {
-                // Report needs the resolved outlet — enabled once the board is.
+                // Both routes need the resolved outlet — enabled with the board.
                 final outletId = context.select<StaffQueueCubit, String?>(
                   (cubit) => cubit.state.board?.outletId,
                 );
-                return IconButton(
-                  icon: const Icon(Icons.insert_chart_outlined),
-                  tooltip: l10n.reportsOpen,
-                  onPressed: outletId == null
-                      ? null
-                      : () => unawaited(
-                          context.pushNamed(
-                            Routes.businessReports.name,
-                            pathParameters: {
-                              'businessId': businessId,
-                              'outletId': outletId,
-                            },
-                          ),
-                        ),
+                void open(Routes route) => unawaited(
+                  context.pushNamed(
+                    route.name,
+                    pathParameters: {
+                      'businessId': businessId,
+                      'outletId': outletId!,
+                    },
+                  ),
+                );
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (canViewBookings)
+                      IconButton(
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        tooltip: l10n.deskTitle,
+                        onPressed: outletId == null
+                            ? null
+                            : () => open(Routes.businessBookings),
+                      ),
+                    if (canViewReports)
+                      IconButton(
+                        icon: const Icon(Icons.insert_chart_outlined),
+                        tooltip: l10n.reportsOpen,
+                        onPressed: outletId == null
+                            ? null
+                            : () => open(Routes.businessReports),
+                      ),
+                  ],
                 );
               },
             ),

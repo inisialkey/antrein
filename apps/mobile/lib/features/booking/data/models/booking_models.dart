@@ -28,7 +28,10 @@ abstract class SlotModel with _$SlotModel {
 
 @freezed
 abstract class NamedRefModel with _$NamedRefModel {
-  const factory NamedRefModel({String? id, String? name}) = _NamedRefModel;
+  /// `phoneNumber` only ever arrives on the booking's `customer` block (§66);
+  /// the business and staff refs leave it null.
+  const factory NamedRefModel({String? id, String? name, String? phoneNumber}) =
+      _NamedRefModel;
 
   factory NamedRefModel.fromJson(Map<String, dynamic> json) =>
       _$NamedRefModelFromJson(json);
@@ -114,6 +117,11 @@ abstract class BookingModel with _$BookingModel {
     CancellationModel? cancellation,
     String? customerNotes,
     DateTime? createdAt,
+    // Business view (§65/§66): the customer block carries contact details and
+    // `internalNotes` is staff-only. Both stay null on the customer's own reads.
+    NamedRefModel? customer,
+    String? internalNotes,
+    String? type,
   }) = _BookingModel;
 
   factory BookingModel.fromJson(Map<String, dynamic> json) =>
@@ -139,6 +147,10 @@ abstract class BookingModel with _$BookingModel {
     cancellationDeadlineAt: cancellation?.deadlineAt,
     customerNotes: customerNotes,
     createdAt: createdAt,
+    customerName: customer?.name,
+    customerPhone: customer?.phoneNumber,
+    internalNotes: internalNotes,
+    isWalkIn: type == 'walk_in',
   );
 }
 

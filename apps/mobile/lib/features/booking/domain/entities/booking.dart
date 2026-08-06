@@ -73,6 +73,10 @@ class Booking extends Equatable {
     this.cancellationDeadlineAt,
     this.customerNotes,
     this.createdAt,
+    this.customerName,
+    this.customerPhone,
+    this.internalNotes,
+    this.isWalkIn = false,
   });
 
   final String id;
@@ -95,7 +99,16 @@ class Booking extends Equatable {
   final String? customerNotes;
   final DateTime? createdAt;
 
+  /// Business view only (§65/§66) — null on the customer's own reads.
+  final String? customerName;
+  final String? customerPhone;
+  final String? internalNotes;
+  final bool isWalkIn;
+
   bool get isAwaitingPayment => status == BookingStatus.pendingPayment;
+
+  /// Money still owed at the counter — what §73 confirmation must send.
+  Money get outstanding => paymentSummary?.remainingAmount ?? const Money(0);
 
   @override
   List<Object?> get props => [
@@ -118,5 +131,9 @@ class Booking extends Equatable {
     cancellationDeadlineAt,
     customerNotes,
     createdAt,
+    customerName,
+    customerPhone,
+    internalNotes,
+    isWalkIn,
   ];
 }
