@@ -73,6 +73,23 @@ void main() {
       );
     });
 
+    // Regression: businessDetail used to be `/business/:businessId`, so the
+    // shell gate's prefix match bounced customers straight back to the home
+    // list the moment they tapped a barbershop card.
+    test('customer opening a public business detail → no redirect', () {
+      expect(
+        resolveAuthRedirect(
+          isLoggedIn: true,
+          hasBusinessAccess: false,
+          location: Routes.businessDetail.path.replaceFirst(
+            ':businessId',
+            'biz_1',
+          ),
+        ),
+        isNull,
+      );
+    });
+
     test('logged-in user on a normal route → no redirect', () {
       expect(
         resolveAuthRedirect(

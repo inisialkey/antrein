@@ -14,8 +14,10 @@ enum Routes {
   customerNotifications('/notifications'),
   customerProfile('/profile'),
 
-  // Booking flow (full-screen, outside the shell)
-  businessDetail('/business/:businessId'),
+  // Booking flow (full-screen, outside the shell). Public discovery detail —
+  // the plural path keeps it clear of the `/business/*` shell gate, which sends
+  // anyone without business access back to the customer home.
+  businessDetail('/businesses/:businessId'),
   bookingSlots('/book/slots'),
   bookingConfirm('/book/confirm'),
   bookingDetail('/booking/:bookingId'),
