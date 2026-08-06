@@ -9,10 +9,10 @@ import 'package:antrein/core/ui/widgets/widgets.dart';
 import 'package:antrein/features/booking/domain/entities/booking.dart';
 import 'package:antrein/features/booking/presentation/cubit/booking_detail_cubit.dart';
 import 'package:antrein/features/booking/presentation/widgets/booking_status_chip.dart';
+import 'package:antrein/features/booking/presentation/widgets/checkout_button.dart';
 import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/reviews/reviews.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -220,7 +220,6 @@ class _PendingPaymentCard extends StatelessWidget {
     final l10n = context.l10n;
     final payment = state.pendingPayment;
     final checkoutUrl = payment?.checkoutUrl;
-    final scheme = context.colorScheme;
     final locale = Localizations.localeOf(context).toString();
 
     return Card(
@@ -259,42 +258,11 @@ class _PendingPaymentCard extends StatelessWidget {
               ),
             if (checkoutUrl != null) ...[
               const Gap(Dimens.space12),
-              // ponytail: the sandbox checkout URL is not a real page yet —
-              // copy-to-clipboard stands in for url_launcher until a real
-              // gateway (Midtrans Snap) lands.
-              InkWell(
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: checkoutUrl));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.checkoutLinkCopied)),
-                    );
-                  }
-                },
-                child: Container(
-                  padding: EdgeInsets.all(Dimens.space12.r),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: BorderRadius.circular(Dimens.radiusSm.r),
-                    border: Border.all(color: scheme.outlineVariant),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          checkoutUrl,
-                          style: context.textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(Icons.copy, size: Dimens.iconSm.r),
-                    ],
-                  ),
-                ),
-              ),
+              CheckoutButton(url: checkoutUrl),
             ],
             const Gap(Dimens.space12),
+            // The gateway never calls the app back, so this is how the customer
+            // pulls the webhook result in after paying in the browser.
             AppButton(
               label: l10n.checkPaymentStatus,
               loading: state.isRefreshingPayment,
