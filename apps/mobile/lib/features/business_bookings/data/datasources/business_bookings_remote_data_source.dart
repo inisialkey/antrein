@@ -35,6 +35,17 @@ abstract class BusinessBookingsRemoteDataSource {
     required String idempotencyKey,
     String? reason,
   });
+
+  Future<List<PaymentModel>> listPayments(String bookingId);
+
+  Future<void> requestRefund({
+    required String businessId,
+    required String paymentId,
+    required Money amount,
+    required String reasonCode,
+    required String reason,
+    required String idempotencyKey,
+  });
 }
 
 @LazySingleton(as: BusinessBookingsRemoteDataSource)
@@ -115,6 +126,39 @@ class BusinessBookingsRemoteDataSourceImpl
         ApiEndpoints.businessBookingNoShow(businessId, bookingId),
         options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         data: {if (reason != null && reason.isNotEmpty) 'reason': reason},
+      ),
+    );
+  }
+
+  @override
+  Future<List<PaymentModel>> listPayments(String bookingId) async {
+    final data = await sendEnvelope(
+      () => _dio.get<dynamic>(ApiEndpoints.bookingPayments(bookingId)),
+    );
+    return ((data['items'] as List<dynamic>?) ?? const [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => PaymentModel.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  @override
+  Future<void> requestRefund({
+    required String businessId,
+    required String paymentId,
+    required Money amount,
+    required String reasonCode,
+    required String reason,
+    required String idempotencyKey,
+  }) async {
+    await sendEnvelope(
+      () => _dio.post<dynamic>(
+        ApiEndpoints.paymentRefunds(businessId, paymentId),
+        options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+        data: {
+          'amount': amount.toJson(),
+          'reasonCode': reasonCode,
+          'reason': reason,
+        },
       ),
     );
   }

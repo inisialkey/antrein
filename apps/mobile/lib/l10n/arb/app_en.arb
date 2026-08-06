@@ -418,5 +418,35 @@
   "manageMenu": "Manage",
   "profileBusinessSection": "Business",
   "profileCreateBusiness": "Register a business",
-  "profileJoinBusiness": "Join with an invitation"
+  "profileJoinBusiness": "Join with an invitation",
+
+  "refundAction": "Refund",
+  "refundTitle": "Refund {amount}?",
+  "@refundTitle": { "placeholders": { "amount": { "type": "String" } } },
+  "refundWarning": "The money goes back to the customer through the payment provider. This cannot be undone.",
+  "refundReasonHint": "Refund reason (required)",
+  "refundNoneAvailable": "No online payment on this booking can be refunded.",
+  "refundRequested": "Refund requested. The provider settles it shortly.",
+
+  "profileEditTitle": "Edit profile",
+  "profileEditSaved": "Profile updated.",
+  "profileFullName": "Full name",
+  "profilePhotoChange": "Change photo",
+  "profilePhotoRemove": "Remove photo",
+
+  "notificationPrefsTitle": "Notifications",
+  "notificationPrefsSubtitle": "Choose what AntreIn may send to this phone.",
+  "notificationPrefsSaved": "Preferences saved.",
+  "notificationPrefsLoadFailed": "Couldn't load your preferences.",
+  "notificationPrefBooking": "Booking updates",
+  "notificationPrefPayment": "Payment updates",
+  "notificationPrefQueue": "Queue updates",
+  "notificationPrefMarketing": "Promotions",
+
+  "imagePick": "Choose image",
+  "imageReplace": "Replace image",
+  "imageRemove": "Remove image",
+  "imageSourceGallery": "Gallery",
+  "imageSourceCamera": "Camera",
+  "imageUploadFailed": "Couldn't upload the image."
 }

@@ -69,9 +69,10 @@ export class BusinessesController {
   @RequireBusinessPermission('business.manage')
   @ApiOperation({ summary: 'Update business profile and policies' })
   update(
+    @CurrentUser() principal: AccessTokenPrincipal,
     @Param('businessId') businessId: string,
     @Body() dto: UpdateBusinessDto,
   ): ReturnType<BusinessesService['update']> {
-    return this.businesses.update(businessId, dto);
+    return this.businesses.update(businessId, dto, principal.userId);
   }
 }

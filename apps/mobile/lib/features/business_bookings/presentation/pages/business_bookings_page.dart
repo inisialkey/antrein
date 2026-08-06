@@ -47,6 +47,7 @@ class BusinessBookingsPage extends StatelessWidget {
         canConfirmPayment: membership?.can('payment.confirm') ?? false,
         canManageBooking: membership?.can('booking.manage') ?? false,
         canManageQueue: membership?.can('queue.manage') ?? false,
+        canRefund: membership?.can('payment.refund') ?? false,
       ),
     );
   }
@@ -57,11 +58,13 @@ class _BookingDeskView extends StatelessWidget {
     required this.canConfirmPayment,
     required this.canManageBooking,
     required this.canManageQueue,
+    required this.canRefund,
   });
 
   final bool canConfirmPayment;
   final bool canManageBooking;
   final bool canManageQueue;
+  final bool canRefund;
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +145,7 @@ class _BookingDeskView extends StatelessWidget {
         BookingDeskAction.paymentConfirmed => l10n.deskPaymentConfirmed,
         BookingDeskAction.cancelled => l10n.deskCancelled,
         BookingDeskAction.noShow => l10n.deskNoShowDone,
+        BookingDeskAction.refunded => l10n.refundRequested,
         null => null,
       };
 
@@ -159,6 +163,7 @@ class _BookingDeskView extends StatelessWidget {
             canConfirmPayment: canConfirmPayment,
             canManageBooking: canManageBooking,
             canManageQueue: canManageQueue,
+            canRefund: canRefund,
           ),
         ),
       ),

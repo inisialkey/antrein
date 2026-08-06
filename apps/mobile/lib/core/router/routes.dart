@@ -32,6 +32,11 @@ enum Routes {
   businessSchedule('/business/schedule/:businessId/:outletId'),
   businessSettings('/business/settings/:businessId/:outletId'),
 
+  // Account settings, pushed over the customer shell's Profile tab. Kept off
+  // `/profile/*` so they can never be mistaken for the shell branch's own path.
+  profileEdit('/account/edit'),
+  notificationPreferences('/account/notifications'),
+
   // Business onboarding. Deliberately outside `/business/*`: that prefix is
   // gated on business access, which the user asking for this page lacks.
   createBusiness('/create-business');

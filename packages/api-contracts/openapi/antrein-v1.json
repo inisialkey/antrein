@@ -359,6 +359,102 @@
         ]
       }
     },
+    "/api/v1/files": {
+      "post": {
+        "operationId": "FilesController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "purpose"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload an image (contract §36)",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/v1/files/{fileId}/content": {
+      "get": {
+        "operationId": "FilesController_content",
+        "parameters": [
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Serve file bytes (contract §37.1)",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/v1/files/{fileId}": {
+      "delete": {
+        "operationId": "FilesController_remove",
+        "parameters": [
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an unattached file (contract §37)",
+        "tags": [
+          "files"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "MeController_me",
@@ -374,6 +470,64 @@
           }
         ],
         "summary": "Get the current user profile",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "MeController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update the current user profile (contract §32)",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/me/notification-preferences": {
+      "patch": {
+        "operationId": "MeController_updatePreferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update notification preferences (contract §33)",
         "tags": [
           "users"
         ]
@@ -3078,6 +3232,42 @@
           "timezone": {
             "type": "string",
             "example": "Asia/Jakarta"
+          }
+        }
+      },
+      "UpdateMeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Oki Key"
+          },
+          "phoneNumber": {
+            "type": "object",
+            "example": "+6281234567890",
+            "nullable": true
+          },
+          "avatarFileId": {
+            "type": "object",
+            "example": "fil_01J...",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateNotificationPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "bookingUpdates": {
+            "type": "boolean"
+          },
+          "paymentUpdates": {
+            "type": "boolean"
+          },
+          "queueUpdates": {
+            "type": "boolean"
+          },
+          "marketing": {
+            "type": "boolean"
           }
         }
       },

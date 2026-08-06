@@ -55,11 +55,12 @@ export class ServicesController {
   @RequireBusinessPermission('service.manage')
   @ApiOperation({ summary: 'Update a service' })
   update(
+    @CurrentUser() principal: AccessTokenPrincipal,
     @Param('businessId') businessId: string,
     @Param('serviceId') serviceId: string,
     @Body() dto: UpdateServiceDto,
   ): ReturnType<ServicesService['update']> {
-    return this.services.update(businessId, serviceId, dto);
+    return this.services.update(businessId, serviceId, dto, principal.userId);
   }
 
   @Post(':serviceId/deactivate')

@@ -80,6 +80,8 @@ class ManagedBusiness extends Equatable {
     required this.id,
     required this.name,
     this.description,
+    this.logoUrl,
+    this.logoFileId,
     this.supportedPaymentOptions = const [],
     this.bookingPolicy = const BookingPolicy(),
     this.cancellationPolicy = const CancellationPolicy(),
@@ -89,6 +91,13 @@ class ManagedBusiness extends Equatable {
   final String id;
   final String name;
   final String? description;
+
+  /// Absolute §37.1 URL of the current logo, or null when none is attached.
+  final String? logoUrl;
+
+  /// A freshly uploaded file (§36) to attach on the next save; null leaves the
+  /// logo untouched.
+  final String? logoFileId;
   final List<String> supportedPaymentOptions;
   final BookingPolicy bookingPolicy;
   final CancellationPolicy cancellationPolicy;
@@ -103,6 +112,8 @@ class ManagedBusiness extends Equatable {
     id,
     name,
     description,
+    logoUrl,
+    logoFileId,
     supportedPaymentOptions,
     bookingPolicy,
     cancellationPolicy,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/extensions/extensions.dart';
+import 'package:antrein/core/files/image_picker_field.dart';
 import 'package:antrein/core/ui/dimens.dart';
 import 'package:antrein/core/ui/widgets/widgets.dart';
 import 'package:antrein/features/business_management/domain/entities/managed_business.dart';
@@ -108,6 +109,8 @@ class _SettingsFormState extends State<_SettingsForm> {
   late final TextEditingController _noShowRefundPercent;
   late Set<String> _paymentOptions;
   late bool _automaticConfirmation;
+  String? _logoUrl;
+  String? _logoFileId;
 
   @override
   void initState() {
@@ -117,6 +120,7 @@ class _SettingsFormState extends State<_SettingsForm> {
     final booking = business.bookingPolicy;
     final cancellation = business.cancellationPolicy;
 
+    _logoUrl = business.logoUrl;
     _name = TextEditingController(text: business.name);
     _description = TextEditingController(text: business.description ?? '');
     _outletName = TextEditingController(text: outlet?.name ?? '');
@@ -175,6 +179,11 @@ class _SettingsFormState extends State<_SettingsForm> {
         padding: EdgeInsets.all(Dimens.space16.r),
         children: [
           _SectionTitle(l10n.settingsProfile),
+          ImagePickerField(
+            imageUrl: _logoUrl,
+            onPicked: enabled ? _uploadLogo : null,
+          ),
+          const Gap(Dimens.space12),
           AppTextField(
             controller: _name,
             label: l10n.settingsBusinessName,
@@ -338,6 +347,19 @@ class _SettingsFormState extends State<_SettingsForm> {
         : null;
   }
 
+  /// Uploads straight away so the owner sees the new logo; the id rides along
+  /// on the next save (§45), which is what actually attaches it.
+  Future<String?> _uploadLogo(String path) async {
+    final result = await context.read<BusinessSettingsCubit>().uploadLogo(path);
+    return result.match((failure) => failure.message, (image) {
+      setState(() {
+        _logoUrl = image.url;
+        _logoFileId = image.id;
+      });
+      return null;
+    });
+  }
+
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final description = _description.text.trim();
@@ -351,6 +373,7 @@ class _SettingsFormState extends State<_SettingsForm> {
           id: widget.business.id,
           name: _name.text.trim(),
           description: description.isEmpty ? null : description,
+          logoFileId: _logoFileId,
           supportedPaymentOptions: _paymentOptions.toList(growable: false),
           bookingPolicy: BookingPolicy(
             minimumLeadMinutes: int.parse(_leadMinutes.text.trim()),

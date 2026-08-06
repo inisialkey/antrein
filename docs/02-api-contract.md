@@ -1358,6 +1358,34 @@ Errors:
 
 ---
 
+## 37.1 Serve File Content
+
+```http
+GET /files/{fileId}/content
+```
+
+Authentication:
+
+```text
+None — the opaque file id is the access control (ADR 0046)
+```
+
+Every `*Url` field in this contract (`avatarUrl`, `logoUrl`, `imageUrl`) is this
+endpoint's absolute URL for the file id the resource points at.
+
+Response `200` is the raw image, not the JSON envelope:
+
+```http
+Content-Type: image/jpeg | image/png | image/webp
+Cache-Control: public, max-age=31536000, immutable
+```
+
+Errors:
+
+- `FILE_NOT_FOUND` — unknown, deleted, or unreadable from storage
+
+---
+
 # Part III — Business Discovery APIs
 
 ## 38. List Businesses
@@ -5570,6 +5598,7 @@ DELETE /me/devices/{deviceId}
 
 ```text
 POST   /files
+GET    /files/{fileId}/content
 DELETE /files/{fileId}
 ```
 

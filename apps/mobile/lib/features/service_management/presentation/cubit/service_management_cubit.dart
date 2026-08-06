@@ -1,5 +1,7 @@
 import 'package:antrein/core/error/failures.dart';
+import 'package:antrein/core/files/file_upload_repository.dart';
 import 'package:antrein/core/utils/idempotency.dart';
+import 'package:antrein/core/utils/typedefs.dart';
 import 'package:antrein/features/service_management/domain/entities/managed_service.dart';
 import 'package:antrein/features/service_management/domain/repositories/service_management_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,9 +17,11 @@ part 'service_management_cubit.freezed.dart';
 /// call would be pure boilerplate here, same as `NotificationsCubit`.
 @injectable
 class ServiceManagementCubit extends Cubit<ServiceManagementState> {
-  ServiceManagementCubit(this._repo) : super(const ServiceManagementState());
+  ServiceManagementCubit(this._repo, this._files)
+    : super(const ServiceManagementState());
 
   final ServiceManagementRepository _repo;
+  final FileUploadRepository _files;
   late String _businessId;
 
   /// Held across transport retries of one create, dropped once the backend
@@ -31,6 +35,11 @@ class ServiceManagementCubit extends Cubit<ServiceManagementState> {
   }
 
   Future<void> refresh() => _fetch(silent: true);
+
+  /// Uploads a service photo (§36). The form holds the returned id until save
+  /// attaches it — an abandoned form leaves an unattached file behind.
+  ResultFuture<UploadedImage> uploadImage(String path) =>
+      _files.upload(filePath: path, purpose: FilePurpose.serviceImage);
 
   /// Create (§47) or update (§48). Returns null on success, otherwise the
   /// message the form should show — the sheet stays open on failure.

@@ -89,6 +89,9 @@ class ServiceManagementRemoteDataSourceImpl
   Map<String, dynamic> _body(ServiceDraft draft) => {
     'name': draft.name,
     'description': draft.description,
+    // Omitted rather than null: a null would clear a photo the form never
+    // touched, and PATCH treats an absent key as "leave it".
+    if (draft.imageFileId != null) 'imageFileId': draft.imageFileId,
     'durationMinutes': draft.durationMinutes,
     'price': {'amount': draft.priceAmount, 'currency': 'IDR'},
     'deposit': draft.depositValue > 0

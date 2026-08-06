@@ -3,4 +3,5 @@
 library;
 
 export 'domain/entities/booking.dart';
+export 'domain/entities/payment_info.dart';
 export 'presentation/widgets/booking_status_chip.dart';

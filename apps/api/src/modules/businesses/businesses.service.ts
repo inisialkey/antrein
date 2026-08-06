@@ -4,6 +4,7 @@ import { clampLimit, decodeCursor, PageMeta, pageOf } from '../../common/paginat
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
 import { validationFailed } from '../auth/auth.errors';
+import { FilesService } from '../files/files.service';
 import { businessNotFound } from '../memberships/membership.errors';
 import { OWNER_PERMISSIONS } from '../memberships/permissions';
 import { IdempotencyService } from '../idempotency/idempotency.service';
@@ -33,6 +34,7 @@ export class BusinessesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
+    private readonly files: FilesService,
   ) {}
 
   async create(
@@ -55,6 +57,9 @@ export class BusinessesService {
         const now = new Date();
         try {
           const { business, outlet } = await this.prisma.$transaction(async (tx) => {
+            if (dto.logoFileId) {
+              await this.files.attach({ fileId: dto.logoFileId, actorUserId: userId }, tx);
+            }
             const business = await tx.business.create({
               data: {
                 id: newId('biz'),
@@ -209,7 +214,11 @@ export class BusinessesService {
     return toManagementResponse(business);
   }
 
-  async update(businessId: string, dto: UpdateBusinessDto): Promise<Record<string, unknown>> {
+  async update(
+    businessId: string,
+    dto: UpdateBusinessDto,
+    actorUserId: string,
+  ): Promise<Record<string, unknown>> {
     for (const option of dto.supportedPaymentOptions ?? []) {
       if (!(PAYMENT_OPTION_LABELS as readonly string[]).includes(option)) {
         throw paymentOptionNotSupported(option);
@@ -255,7 +264,16 @@ export class BusinessesService {
       }
     }
 
+    const current = await this.prisma.business.findUnique({ where: { id: businessId } });
+    if (!current) throw businessNotFound();
+
     await this.prisma.$transaction(async (tx) => {
+      if (dto.logoFileId) {
+        await this.files.attach(
+          { fileId: dto.logoFileId, actorUserId, previousFileId: current.logoFileId },
+          tx,
+        );
+      }
       await tx.business.update({
         where: { id: businessId },
         data: {

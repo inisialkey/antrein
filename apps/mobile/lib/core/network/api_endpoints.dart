@@ -105,9 +105,23 @@ abstract final class ApiEndpoints {
   static String notificationRead(String notificationId) =>
       '/notifications/$notificationId/read';
 
-  // Payments
+  // Payments (contract §70, §74)
+  static String bookingPayments(String bookingId) =>
+      '/bookings/$bookingId/payments';
   static String paymentRefresh(String paymentId) =>
       '/payments/$paymentId/refresh';
+  static String paymentRefunds(String businessId, String paymentId) =>
+      '/businesses/$businessId/payments/$paymentId/refunds';
+
+  // Files (contract §36–§37). The public §37.1 content route is never built
+  // here — every image URL arrives absolute on the resource that owns it.
+  static const String files = '/files';
+  static String file(String fileId) => '/files/$fileId';
+
+  // Current user (contract §32, §33)
+  static const String me = '/me';
+  static const String meNotificationPreferences =
+      '/me/notification-preferences';
 
   // Health
   static const String health = '/health';

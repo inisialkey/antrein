@@ -26,6 +26,7 @@ abstract class ManagedServiceModel with _$ManagedServiceModel {
     required int durationMinutes,
     required Money price,
     String? description,
+    String? imageUrl,
     ServiceDepositModel? deposit,
     @Default(<String>[]) List<String> eligibleStaffIds,
     @Default(true) bool isActive,
@@ -38,6 +39,7 @@ abstract class ManagedServiceModel with _$ManagedServiceModel {
     id: id,
     name: name,
     description: description,
+    imageUrl: imageUrl,
     durationMinutes: durationMinutes,
     price: price,
     // `deposit` is null for a `none` service, so the value carries the type.

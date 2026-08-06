@@ -1,3 +1,4 @@
+import { fileUrl } from '../../common/files/file-url';
 import { User, UserNotificationPreference } from '../../generated/prisma/client';
 import { deriveRoles, MembershipSummary } from '../memberships/memberships.service';
 
@@ -20,7 +21,7 @@ export function toUserResponse(user: User, memberships: MembershipSummary[]): Us
     name: user.name,
     email: user.email,
     phoneNumber: user.phoneNumber,
-    avatarUrl: null,
+    avatarUrl: fileUrl(user.avatarFileId),
     status: user.status,
     roles: deriveRoles(memberships.map((m) => ({ role: m.role, status: 'active' }))),
     businessMemberships: memberships,

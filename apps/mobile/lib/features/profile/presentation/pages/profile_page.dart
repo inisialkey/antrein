@@ -41,15 +41,34 @@ class ProfilePage extends StatelessWidget {
             padding: EdgeInsets.all(Dimens.space16.r),
             children: [
               ListTile(
-                leading: const Icon(Icons.person_outline),
+                leading: user.avatarUrl == null
+                    ? const Icon(Icons.person_outline)
+                    : ClipOval(
+                        child: AppNetworkImage(
+                          url: user.avatarUrl!,
+                          width: Dimens.space32.r,
+                          height: Dimens.space32.r,
+                        ),
+                      ),
                 title: Text(user.name),
                 subtitle: Text(user.email),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    unawaited(context.pushNamed(Routes.profileEdit.name)),
               ),
               if (user.phoneNumber != null)
                 ListTile(
                   leading: const Icon(Icons.phone_outlined),
                   title: Text(user.phoneNumber!),
                 ),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(l10n.notificationPrefsTitle),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => unawaited(
+                  context.pushNamed(Routes.notificationPreferences.name),
+                ),
+              ),
               // The two ways into the business side (§43, §51). Both are hidden
               // once the account already belongs to a business — one business
               // per owner (ADR 0026), and staff already have their shell.

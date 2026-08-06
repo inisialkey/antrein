@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { fileUrl } from '../../common/files/file-url';
 import { clampLimit, decodeCursor, PageMeta, pageOf } from '../../common/pagination/cursor';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { BusinessMembership, Prisma, StaffProfile } from '../../generated/prisma/client';
 import { validationFailed } from '../auth/auth.errors';
 import { AuditService } from '../audit/audit.service';
 import { businessNotActive } from '../businesses/business.errors';
+import { FilesService } from '../files/files.service';
 import { businessNotFound } from '../memberships/membership.errors';
 import { permissionsOf } from '../memberships/memberships.service';
 import { isPermission } from '../memberships/permissions';
@@ -22,7 +24,7 @@ function toStaffResponse(profile: ProfileWithLinks): Record<string, unknown> {
     id: profile.id,
     userId: profile.membership.userId,
     name: profile.displayName,
-    avatarUrl: null, // files module pending
+    avatarUrl: fileUrl(profile.avatarFileId),
     role: profile.membership.role,
     isActive: profile.status === 'active',
     rating: { average: Number(profile.ratingAverage), count: profile.ratingCount },
@@ -44,6 +46,7 @@ export class StaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly files: FilesService,
   ) {}
 
   async listPublic(
@@ -92,7 +95,7 @@ export class StaffService {
         id: row.id,
         userId: row.membership.userId,
         name: row.displayName,
-        avatarUrl: null,
+        avatarUrl: fileUrl(row.avatarFileId),
         role: row.membership.role,
         isActive: row.status === 'active',
         rating: { average: Number(row.ratingAverage), count: row.ratingCount },
@@ -128,6 +131,12 @@ export class StaffService {
     };
 
     await this.prisma.$transaction(async (tx) => {
+      if (dto.avatarFileId) {
+        await this.files.attach(
+          { fileId: dto.avatarFileId, actorUserId, previousFileId: profile.avatarFileId },
+          tx,
+        );
+      }
       await tx.staffProfile.update({
         where: { id: staffId },
         data: {

@@ -11,9 +11,11 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { PaymentsInfraModule } from './infrastructure/payments/payments-infra.module';
 import { PushInfraModule } from './infrastructure/push/push-infra.module';
 import { RealtimeModule } from './infrastructure/realtime/realtime.module';
+import { StorageInfraModule } from './infrastructure/storage/storage-infra.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
+import { FilesModule } from './modules/files/files.module';
 import { HealthModule } from './modules/health/health.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OutletsModule } from './modules/outlets/outlets.module';
@@ -32,9 +34,11 @@ import { UsersModule } from './modules/users/users.module';
     PaymentsInfraModule,
     PushInfraModule,
     RealtimeModule,
+    StorageInfraModule,
     HealthModule,
     NotificationsModule,
     AuthModule,
+    FilesModule,
     UsersModule,
     BusinessesModule,
     BookingsModule,

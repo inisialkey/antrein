@@ -12,7 +12,7 @@ model User {
   email                 String
   emailNormalized       String    @unique(map: "users_email_normalized_uq") @map("email_normalized")
   phoneNumber           String?   @map("phone_number")
-  phoneNumberNormalized String?   @map("phone_number_normalized")
+  phoneNumberNormalized String?   @unique(map: "users_phone_normalized_uq") @map("phone_number_normalized")
   passwordHash          String    @map("password_hash")
   name                  String
   avatarFileId          String?   @map("avatar_file_id")
@@ -40,6 +40,8 @@ model User {
   requestedRefunds       Refund[] @relation("RequestedRefunds")
   reviews                Review[] @relation("CustomerReviews")
   moderatedReviews       Review[] @relation("ModeratedReviews")
+  avatarFile             File?    @relation("UserAvatar", fields: [avatarFileId], references: [id])
+  ownedFiles             File[]   @relation("OwnedFiles")
 
   @@map("users")
 }
@@ -190,6 +192,7 @@ model Business {
   payments    Payment[]
   refunds     Refund[]
   reviews     Review[]
+  logoFile    File?               @relation(fields: [logoFileId], references: [id])
 
   @@index([status], map: "businesses_status_idx")
   @@index([ownerUserId], map: "businesses_owner_idx")
@@ -312,6 +315,7 @@ model StaffProfile {
   bookings          Booking[]
   reservations      BookingReservation[]
   reviews           Review[]
+  avatarFile        File?              @relation(fields: [avatarFileId], references: [id])
 
   @@index([businessId, status], map: "staff_profiles_business_status_idx")
   @@map("staff_profiles")
@@ -349,6 +353,7 @@ model Service {
   business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   staffLinks StaffService[]
   bookings   Booking[]
+  imageFile  File?          @relation(fields: [imageFileId], references: [id])
 
   @@index([businessId, status, sortOrder], map: "services_business_status_sort_idx")
   @@map("services")
@@ -806,4 +811,35 @@ model Review {
 
   @@index([businessId, status, createdAt(sort: Desc)], map: "reviews_business_status_created_idx")
   @@map("reviews")
+}
+
+/// Uploaded image (database-design §45, ADR 0046). The owning resource points
+/// at the file; `status` records whether that pointer exists yet.
+model File {
+  id               String    @id
+  ownerUserId      String    @map("owner_user_id")
+  purpose          String
+  storageProvider  String    @map("storage_provider")
+  storageKey       String    @map("storage_key")
+  mimeType         String    @map("mime_type")
+  sizeBytes        BigInt    @map("size_bytes")
+  checksum         String?
+  visibility       String    @default("private")
+  status           String    @default("pending")
+  originalFilename String?   @map("original_filename")
+  width            Int?
+  height           Int?
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  owner        User           @relation("OwnedFiles", fields: [ownerUserId], references: [id])
+  avatarUsers  User[]         @relation("UserAvatar")
+  businessLogo Business[]
+  staffAvatar  StaffProfile[]
+  serviceImage Service[]
+
+  @@unique([storageProvider, storageKey], map: "files_storage_key_uq")
+  @@index([ownerUserId, createdAt(sort: Desc)], map: "files_owner_idx")
+  @@map("files")
 }

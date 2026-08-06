@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { fileUrl } from '../../common/files/file-url';
 import { newId } from '../../common/id/id';
 import { clampLimit, decodeCursor, PageMeta, pageOf } from '../../common/pagination/cursor';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma, Service } from '../../generated/prisma/client';
 import { validationFailed } from '../auth/auth.errors';
 import { businessNotActive } from '../businesses/business.errors';
+import { FilesService } from '../files/files.service';
 import { idr } from '../businesses/business.mapper';
 import { businessNotFound } from '../memberships/membership.errors';
 import { IdempotencyService } from '../idempotency/idempotency.service';
@@ -34,7 +36,7 @@ export function toServiceResponse(
     businessId: service.businessId,
     name: service.name,
     description: service.description,
-    imageUrl: null, // files module pending
+    imageUrl: fileUrl(service.imageFileId),
     durationMinutes: service.durationMinutes,
     price: idr(service.priceAmount),
     deposit:
@@ -56,6 +58,7 @@ export class ServicesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
+    private readonly files: FilesService,
   ) {}
 
   async create(
@@ -78,6 +81,9 @@ export class ServicesService {
 
         try {
           const service = await this.prisma.$transaction(async (tx) => {
+            if (dto.imageFileId) {
+              await this.files.attach({ fileId: dto.imageFileId, actorUserId: userId }, tx);
+            }
             const last = await tx.service.findFirst({
               where: { businessId },
               orderBy: { sortOrder: 'desc' },
@@ -121,6 +127,7 @@ export class ServicesService {
     businessId: string,
     serviceId: string,
     dto: UpdateServiceDto,
+    actorUserId: string,
   ): Promise<Record<string, unknown>> {
     const existing = await this.prisma.service.findUnique({ where: { id: serviceId } });
     if (!existing || existing.businessId !== businessId) throw serviceNotFound();
@@ -136,6 +143,12 @@ export class ServicesService {
 
     try {
       const service = await this.prisma.$transaction(async (tx) => {
+        if (dto.imageFileId) {
+          await this.files.attach(
+            { fileId: dto.imageFileId, actorUserId, previousFileId: existing.imageFileId },
+            tx,
+          );
+        }
         const service = await tx.service.update({
           where: { id: serviceId },
           data: {

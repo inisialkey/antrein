@@ -1,5 +1,6 @@
 import 'package:antrein/core/domain/money.dart';
 import 'package:antrein/core/error/failures.dart';
+import 'package:antrein/core/files/file_upload_repository.dart';
 import 'package:antrein/features/service_management/service_management.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,8 +10,11 @@ import 'package:mocktail/mocktail.dart';
 class MockServiceManagementRepository extends Mock
     implements ServiceManagementRepository {}
 
+class MockFileUploadRepository extends Mock implements FileUploadRepository {}
+
 void main() {
   late MockServiceManagementRepository repo;
+  late final files = MockFileUploadRepository();
 
   const haircut = ManagedService(
     id: 'svc_1',
@@ -40,7 +44,7 @@ void main() {
 
   blocTest<ServiceManagementCubit, ServiceManagementState>(
     'loads the catalog and the eligibility options',
-    build: () => ServiceManagementCubit(repo),
+    build: () => ServiceManagementCubit(repo, files),
     act: (cubit) => cubit.load('biz_1'),
     expect: () => [
       const ServiceManagementState(status: ServiceListStatus.loading),
@@ -54,7 +58,7 @@ void main() {
 
   blocTest<ServiceManagementCubit, ServiceManagementState>(
     'a failed catalog read surfaces the message',
-    build: () => ServiceManagementCubit(repo),
+    build: () => ServiceManagementCubit(repo, files),
     setUp: () => when(
       () => repo.listServices(any()),
     ).thenAnswer((_) async => const Left(ServerFailure('Not a member.'))),
@@ -71,7 +75,7 @@ void main() {
   test(
     'a create keeps its key across transport retries, drops a rejection',
     () async {
-      final cubit = ServiceManagementCubit(repo);
+      final cubit = ServiceManagementCubit(repo, files);
       await cubit.load('biz_1');
 
       when(
@@ -116,7 +120,7 @@ void main() {
   );
 
   test('an update reloads the catalog and needs no key', () async {
-    final cubit = ServiceManagementCubit(repo);
+    final cubit = ServiceManagementCubit(repo, files);
     await cubit.load('biz_1');
     when(
       () => repo.updateService(any(), any()),
@@ -145,7 +149,7 @@ void main() {
 
   blocTest<ServiceManagementCubit, ServiceManagementState>(
     'a failed deactivate leaves the row unlocked and reports why',
-    build: () => ServiceManagementCubit(repo),
+    build: () => ServiceManagementCubit(repo, files),
     setUp: () => when(
       () => repo.deactivateService(any(), any()),
     ).thenAnswer((_) async => const Left(ServerFailure('Nope.'))),
