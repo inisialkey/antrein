@@ -28,6 +28,10 @@ abstract final class Dimens {
   static const double logo = 96;
   static const double buttonHeight = 52;
 
+  /// Material's own default button minimum width — kept explicit because the
+  /// theme overrides `minimumSize`, which would otherwise drop it.
+  static const double buttonMinWidth = 64;
+
   // Radii (soft-UI rounding)
   static const double radiusSm = 8;
   static const double radiusMd = 12;

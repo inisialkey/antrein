@@ -101,16 +101,19 @@ class AppTheme {
           borderSide: BorderSide(color: scheme.error, width: 1.5),
         ),
       ),
+      // Height only — `Size.fromHeight` would also pin the *minimum width* to
+      // infinity, which asserts inside a Row (non-flex children get unbounded
+      // main-axis constraints). Full width is `AppButton(expanded: true)`'s job.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(Dimens.buttonHeight),
+          minimumSize: const Size(Dimens.buttonMinWidth, Dimens.buttonHeight),
           shape: RoundedRectangleBorder(borderRadius: radiusMd),
           textStyle: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(Dimens.buttonHeight),
+          minimumSize: const Size(Dimens.buttonMinWidth, Dimens.buttonHeight),
           shape: RoundedRectangleBorder(borderRadius: radiusMd),
         ),
       ),
