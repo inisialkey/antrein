@@ -27,6 +27,11 @@ sealed class StaffQueueState with _$StaffQueueState {
     @Default(false) bool isLoadingServices,
     @Default(false) bool isCreatingWalkIn,
 
+    /// Barbers offered when starting an entry that has no assigned staff —
+    /// walk-ins join as any-available, so §87 must supply the staffId.
+    List<StaffMember>? staffOptions,
+    @Default(false) bool isLoadingStaff,
+
     /// Display number of the last created walk-in — transient snackbar signal.
     String? walkInCreatedNumber,
 

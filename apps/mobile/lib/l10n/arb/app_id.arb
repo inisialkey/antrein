@@ -178,6 +178,10 @@
   "walkInCreated": "Walk-in ditambahkan: {number}",
   "@walkInCreated": { "placeholders": { "number": { "type": "String" } } },
   "walkInServicesFailed": "Gagal memuat layanan.",
+
+  "startStaffTitle": "Pilih barber",
+  "startStaffBusy": "Sedang melayani",
+  "startStaffFailed": "Gagal memuat daftar barber.",
   "reorderReasonTitle": "Alasan pengurutan ulang",
   "reorderReasonHint": "Mengapa urutan berubah?",
   "reorderSave": "Simpan urutan",

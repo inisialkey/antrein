@@ -607,16 +607,109 @@ class _Actions extends StatelessWidget {
           _CommandButton(
             label: label,
             primary: primary,
-            onPressed: locked
-                ? null
-                // ponytail: skip/no-show send no reason — the field is optional
-                // (§85/§89). Add a reason prompt if staff need to record one.
-                : () => context.read<StaffQueueCubit>().runCommand(
-                    entry,
-                    command,
-                  ),
+            // ponytail: skip/no-show send no reason — the field is optional
+            // (§85/§89). Add a reason prompt if staff need to record one.
+            onPressed: locked ? null : () => _run(context, command),
           ),
       ],
+    );
+  }
+
+  /// Start-service (§87) needs a staffId, and a walk-in entry has none — it
+  /// joined as any-available — so the barber is picked here instead of letting
+  /// the backend reject the command with `STAFF_NOT_AVAILABLE`.
+  void _run(BuildContext context, QueueCommand command) {
+    final cubit = context.read<StaffQueueCubit>();
+    if (command == QueueCommand.startService && entry.staffId == null) {
+      unawaited(cubit.loadStaffOptions());
+      unawaited(
+        showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          builder: (_) => BlocProvider.value(
+            value: cubit,
+            child: _StartSheet(entry: entry),
+          ),
+        ),
+      );
+      return;
+    }
+    unawaited(cubit.runCommand(entry, command));
+  }
+}
+
+/// Barber picker for an unassigned entry; tapping a barber starts the service.
+class _StartSheet extends StatelessWidget {
+  const _StartSheet({required this.entry});
+
+  final QueueBoardEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return BlocBuilder<StaffQueueCubit, StaffQueueState>(
+      builder: (context, state) {
+        final staff = state.staffOptions;
+        // The §82 snapshot exposes a single serving slot, so this under-reports
+        // rather than guesses: an unlisted busy barber still fails server-side
+        // on the one-in-service-per-staff index, with an accurate message.
+        final serving = state.board?.currentServing;
+        final busyStaffId = serving?.status == QueueStatus.inService
+            ? serving?.staffId
+            : null;
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: Dimens.space16.r),
+                child: Text(
+                  l10n.startStaffTitle,
+                  style: context.textTheme.titleLarge,
+                ),
+              ),
+              const Gap(Dimens.space12),
+              if (state.isLoadingStaff)
+                const Padding(
+                  padding: EdgeInsets.all(Dimens.space16),
+                  child: LinearProgressIndicator(),
+                )
+              else if (staff == null || staff.isEmpty)
+                Padding(
+                  padding: EdgeInsets.all(Dimens.space16.r),
+                  child: Text(
+                    l10n.startStaffFailed,
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.colorScheme.error,
+                    ),
+                  ),
+                )
+              else
+                for (final member in staff)
+                  ListTile(
+                    title: Text(member.name),
+                    subtitle: member.id == busyStaffId
+                        ? Text(l10n.startStaffBusy)
+                        : null,
+                    enabled: member.id != busyStaffId,
+                    onTap: () {
+                      final cubit = context.read<StaffQueueCubit>();
+                      Navigator.pop(context);
+                      unawaited(
+                        cubit.runCommand(
+                          entry,
+                          QueueCommand.startService,
+                          staffId: member.id,
+                        ),
+                      );
+                    },
+                  ),
+              const Gap(Dimens.space8),
+            ],
+          ),
+        );
+      },
     );
   }
 }

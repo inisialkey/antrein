@@ -232,6 +232,10 @@
   "walkInCreated": "Walk-in added: {number}",
   "@walkInCreated": { "placeholders": { "number": { "type": "String" } } },
   "walkInServicesFailed": "Couldn't load services.",
+
+  "startStaffTitle": "Pick a barber",
+  "startStaffBusy": "In service",
+  "startStaffFailed": "Couldn't load the barber list.",
   "reorderReasonTitle": "Reorder reason",
   "reorderReasonHint": "Why is the order changing?",
   "reorderSave": "Save order",

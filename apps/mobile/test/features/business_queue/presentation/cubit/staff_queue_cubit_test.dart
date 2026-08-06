@@ -13,6 +13,7 @@ import 'package:antrein/features/business_queue/presentation/cubit/staff_queue_c
 import 'package:antrein/features/customer_queue/customer_queue.dart'
     show QueueStatus;
 import 'package:antrein/features/discovery/domain/entities/service_item.dart';
+import 'package:antrein/features/discovery/domain/entities/staff_member.dart';
 import 'package:antrein/features/discovery/domain/repositories/discovery_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -247,6 +248,75 @@ void main() {
       ).called(2); // initial load + reconnect resync
     },
   );
+
+  group('start-service staff picker (§87)', () {
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'loads the barbers once and drops inactive ones',
+      build: build,
+      setUp: () {
+        stubLoad();
+        when(() => discovery.listStaff('biz_1')).thenAnswer(
+          (_) async => const Right([
+            StaffMember(id: 'stf_1', name: 'Andi'),
+            StaffMember(id: 'stf_2', name: 'Sinta', isActive: false),
+          ]),
+        );
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        await cubit.loadStaffOptions();
+        await cubit.loadStaffOptions();
+      },
+      verify: (cubit) {
+        verify(() => discovery.listStaff('biz_1')).called(1);
+        expect(cubit.state.staffOptions, const [
+          StaffMember(id: 'stf_1', name: 'Andi'),
+        ]);
+        expect(cubit.state.isLoadingStaff, isFalse);
+      },
+    );
+
+    // The bug this guards: a walk-in entry carries no staffId, so omitting it
+    // here makes the backend reject every start with STAFF_NOT_AVAILABLE.
+    blocTest<StaffQueueCubit, StaffQueueState>(
+      'forwards the picked barber to the start command',
+      build: build,
+      setUp: () {
+        stubLoad();
+        when(
+          () => repo.runCommand(
+            businessId: 'biz_1',
+            queueEntryId: 'que_w1',
+            command: QueueCommand.startService,
+            expectedVersion: 2,
+            idempotencyKey: any(named: 'idempotencyKey'),
+            staffId: 'stf_1',
+          ),
+        ).thenAnswer((_) async => const Right(null));
+      },
+      act: (cubit) async {
+        await cubit.load(businessId: 'biz_1', membershipOutletIds: const []);
+        await cubit.runCommand(
+          waitingEntry,
+          QueueCommand.startService,
+          staffId: 'stf_1',
+        );
+      },
+      verify: (cubit) {
+        verify(
+          () => repo.runCommand(
+            businessId: 'biz_1',
+            queueEntryId: 'que_w1',
+            command: QueueCommand.startService,
+            expectedVersion: 2,
+            idempotencyKey: any(named: 'idempotencyKey'),
+            staffId: 'stf_1',
+          ),
+        ).called(1);
+        expect(cubit.state.actionError, isNull);
+      },
+    );
+  });
 
   group('walk-in (§67)', () {
     blocTest<StaffQueueCubit, StaffQueueState>(

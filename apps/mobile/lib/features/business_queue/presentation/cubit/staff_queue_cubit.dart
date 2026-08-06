@@ -9,6 +9,7 @@ import 'package:antrein/features/business_queue/domain/entities/queue_board_entr
 import 'package:antrein/features/business_queue/domain/entities/queue_command.dart';
 import 'package:antrein/features/business_queue/domain/repositories/business_queue_repository.dart';
 import 'package:antrein/features/discovery/domain/entities/service_item.dart';
+import 'package:antrein/features/discovery/domain/entities/staff_member.dart';
 import 'package:antrein/features/discovery/domain/repositories/discovery_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -162,6 +163,31 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
       ),
       (services) => emit(
         state.copyWith(isLoadingServices: false, walkInServices: services),
+      ),
+    );
+  }
+
+  /// Loads (once) the barbers offered by the start-service picker (§87). A
+  /// walk-in entry carries no staffId, and `start-service` rejects a missing one
+  /// with `STAFF_NOT_AVAILABLE`, so the barber is chosen at this point.
+  Future<void> loadStaffOptions() async {
+    final businessId = _businessId;
+    if (businessId == null ||
+        state.staffOptions != null ||
+        state.isLoadingStaff) {
+      return;
+    }
+    emit(state.copyWith(isLoadingStaff: true));
+    final result = await _discovery.listStaff(businessId);
+    result.match(
+      (failure) => emit(
+        state.copyWith(isLoadingStaff: false, actionError: failure.message),
+      ),
+      (staff) => emit(
+        state.copyWith(
+          isLoadingStaff: false,
+          staffOptions: staff.where((s) => s.isActive).toList(),
+        ),
       ),
     );
   }
