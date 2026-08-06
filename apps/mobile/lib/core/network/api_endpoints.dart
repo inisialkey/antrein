@@ -51,6 +51,18 @@ abstract final class ApiEndpoints {
   static String queueReorder(String businessId, String outletId) =>
       '/businesses/$businessId/outlets/$outletId/queue/reorder';
 
+  // Business bookings (staff — contract §65, §68, §68.1, §73). The §66 single-get
+  // is omitted: the list already returns the full business-view resource, so the
+  // detail sheet reads from the loaded page. Add it when the sheet outlives a list.
+  static String businessBookings(String businessId) =>
+      '/businesses/$businessId/bookings';
+  static String businessBookingCancel(String businessId, String bookingId) =>
+      '/businesses/$businessId/bookings/$bookingId/cancel';
+  static String businessBookingNoShow(String businessId, String bookingId) =>
+      '/businesses/$businessId/bookings/$bookingId/no-show';
+  static String payAtLocationConfirm(String businessId, String bookingId) =>
+      '/businesses/$businessId/bookings/$bookingId/payments/pay-at-location/confirm';
+
   // Payments
   static String paymentRefresh(String paymentId) =>
       '/payments/$paymentId/refresh';

@@ -25,6 +25,7 @@ enum Routes {
 
   // Business shell (stub until M4)
   businessHome('/business'),
+  businessBookings('/business/bookings/:businessId/:outletId'),
   businessReports('/business/reports/:businessId/:outletId');
 
   const Routes(this.path);

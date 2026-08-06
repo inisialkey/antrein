@@ -35,6 +35,11 @@ abstract final class ApiErrorCodes {
   static const String paymentRefreshRateLimited =
       'PAYMENT_STATUS_REFRESH_RATE_LIMITED';
 
+  // Pay-at-location confirmation (api-contract §73). Both mean the client's
+  // outstanding figure is stale — the caller resyncs the list before retrying.
+  static const String paymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
+  static const String paymentAlreadyPaid = 'PAYMENT_ALREADY_PAID';
+
   // Queue + check-in (api-contract §58/§122 — mirrors queue/domain/queue.errors.ts)
   static const String bookingCheckInTooEarly = 'BOOKING_CHECK_IN_TOO_EARLY';
   static const String bookingCheckInTooLate = 'BOOKING_CHECK_IN_TOO_LATE';
