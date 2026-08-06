@@ -2474,7 +2474,29 @@ The exact behavior for existing bookings must be decided before implementation.
 
 ---
 
-## 58. Replace Staff Schedule
+## 58. Get Staff Schedule
+
+```http
+GET /businesses/{businessId}/staff/{staffId}/schedule
+```
+
+Authorization:
+
+```text
+Business membership required
+```
+
+Response `200` uses the same normalized body as §58.1. A staff member whose
+schedule was never configured returns all seven days with `isAvailable: false`
+— availability then follows outlet operating hours until the first replace.
+
+Errors:
+
+- `STAFF_NOT_FOUND`
+
+---
+
+## 58.1. Replace Staff Schedule
 
 ```http
 PUT /businesses/{businessId}/staff/{staffId}/schedule
@@ -5595,6 +5617,7 @@ GET    /businesses/{businessId}/outlets/{outletId}/operating-hours
 PUT    /businesses/{businessId}/outlets/{outletId}/operating-hours
 GET    /businesses/{businessId}/outlets/{outletId}/closed-dates
 POST   /businesses/{businessId}/outlets/{outletId}/closed-dates
+GET    /businesses/{businessId}/staff/{staffId}/schedule
 PUT    /businesses/{businessId}/staff/{staffId}/schedule
 ```
 

@@ -393,6 +393,20 @@ describe('Scheduling endpoints (integration)', () => {
       expect(day.isAvailable).toBe(true);
       expect(day.periods).toEqual([{ startsAt: '09:00', endsAt: '17:00' }]);
       expect(day.breaks).toEqual([{ startsAt: '10:30', endsAt: '11:15' }]);
+
+      // §58 read side — the editor prefills from this, and any member may read
+      // it (this token is the one rejected by the PUT above).
+      const read = await http()
+        .get(`/api/v1/businesses/${businessId}/staff/${staffId}/schedule`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+      expect(read.body.data).toEqual(replaced.body.data);
+
+      const missing = await http()
+        .get(`/api/v1/businesses/${businessId}/staff/stf_missing/schedule`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(404);
+      expect(missing.body.error.code).toBe('STAFF_NOT_FOUND');
     });
   });
 

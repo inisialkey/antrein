@@ -98,6 +98,17 @@ export class SchedulesController {
     );
   }
 
+  @Get(':businessId/staff/:staffId/schedule')
+  @ApiBearerAuth()
+  @RequireBusinessPermission(null)
+  @ApiOperation({ summary: 'Get a staff weekly schedule' })
+  getStaffSchedule(
+    @Param('businessId') businessId: string,
+    @Param('staffId') staffId: string,
+  ): ReturnType<SchedulesService['getStaffSchedule']> {
+    return this.schedules.getStaffSchedule(businessId, staffId);
+  }
+
   @Put(':businessId/staff/:staffId/schedule')
   @ApiBearerAuth()
   @RequireBusinessPermission('staff.manage')

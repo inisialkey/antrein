@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/features/reviews/domain/usecases/create_review.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -27,7 +26,7 @@ class ReviewFormCubit extends Cubit<ReviewFormState> {
   }) async {
     if (state is ReviewFormSubmitting) return;
     emit(const ReviewFormState.submitting());
-    final key = _idempotencyKey ??= _newKey();
+    final key = _idempotencyKey ??= newIdempotencyKey();
     final trimmed = comment?.trim();
     final result = await _createReview(
       CreateReviewParams(
@@ -47,11 +46,5 @@ class ReviewFormCubit extends Cubit<ReviewFormState> {
         emit(const ReviewFormState.success());
       },
     );
-  }
-
-  static String _newKey() {
-    final random = Random();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_'
-        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 }

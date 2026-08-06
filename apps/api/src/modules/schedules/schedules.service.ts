@@ -228,6 +228,21 @@ export class SchedulesService {
     });
   }
 
+  async getStaffSchedule(businessId: string, staffId: string): Promise<Record<string, unknown>> {
+    const staff = await this.prisma.staffProfile.findUnique({
+      where: { id: staffId },
+      include: {
+        business: { select: { timezone: true } },
+        schedules: { include: { breaks: true } },
+      },
+    });
+    if (!staff || staff.businessId !== businessId) throw staffNotFound();
+    // Never configured: every day comes back unavailable, which is what the
+    // replace endpoint writes. Availability still follows outlet hours until
+    // the first replace (see staffAvailabilityRangesOf).
+    return { staffId, timezone: staff.business.timezone, days: staffDaysOf(staff.schedules) };
+  }
+
   async replaceStaffSchedule(
     businessId: string,
     staffId: string,
@@ -260,11 +275,7 @@ export class SchedulesService {
       this.prisma.staffScheduleBreak.createMany({ data: breaks }),
     ]);
 
-    const rows = await this.prisma.staffSchedule.findMany({
-      where: { staffId },
-      include: { breaks: true },
-    });
-    return { staffId, timezone: staff.business.timezone, days: staffDaysOf(rows) };
+    return this.getStaffSchedule(businessId, staffId);
   }
 
   async getAvailability(

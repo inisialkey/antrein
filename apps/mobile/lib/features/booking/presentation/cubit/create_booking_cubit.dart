@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/features/booking/domain/entities/booking_draft.dart';
 import 'package:antrein/features/booking/domain/repositories/booking_repository.dart';
 import 'package:antrein/features/booking/domain/usecases/create_booking.dart';
@@ -28,7 +27,7 @@ class CreateBookingCubit extends Cubit<CreateBookingState> {
     final slot = draft.slot;
     final staff = draft.staff;
     if (slot == null || staff == null) return;
-    _idempotencyKey ??= _newKey();
+    _idempotencyKey ??= newIdempotencyKey();
 
     emit(const CreateBookingState.submitting());
     final result = await _createBooking(
@@ -63,14 +62,5 @@ class CreateBookingCubit extends Cubit<CreateBookingState> {
         emit(CreateBookingState.success(creation));
       },
     );
-  }
-
-  static String _newKey() {
-    final random = Random();
-    final suffix = List.generate(
-      4,
-      (_) => random.nextInt(1 << 32).toRadixString(16),
-    ).join();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_$suffix';
   }
 }
