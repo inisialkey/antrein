@@ -291,5 +291,12 @@
   "deskCancelled": "Booking cancelled.",
   "deskNoShow": "Mark no-show",
   "deskNoShowTitle": "Mark as no-show?",
-  "deskNoShowDone": "Booking marked no-show."
+  "deskNoShowDone": "Booking marked no-show.",
+
+  "notificationsEmpty": "No notifications yet.",
+  "notificationsEmptyUnread": "Everything is read.",
+  "notificationsLoadFailed": "Couldn't load notifications.",
+  "notificationsFilterAll": "All",
+  "notificationsFilterUnread": "Unread",
+  "notificationsMarkAllRead": "Mark all read"
 }

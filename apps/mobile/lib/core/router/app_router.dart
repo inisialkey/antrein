@@ -1,6 +1,7 @@
-import 'package:antrein/app/shells/coming_soon_page.dart';
+import 'dart:async';
+
 import 'package:antrein/app/shells/customer_shell.dart';
-import 'package:antrein/core/extensions/extensions.dart';
+import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/router/auth_redirect.dart';
 import 'package:antrein/core/router/go_router_refresh_stream.dart';
 import 'package:antrein/core/router/routes.dart';
@@ -19,9 +20,11 @@ import 'package:antrein/features/business_dashboard/presentation/pages/business_
 import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
 import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
+import 'package:antrein/features/notifications/notifications.dart';
 import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
 import 'package:antrein/features/reports/reports.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injectable/injectable.dart';
 
@@ -126,8 +129,17 @@ class AppRouter {
         ),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            CustomerShell(navigationShell: navigationShell),
+        // The inbox cubit is provided above the shell, not inside the tab: the
+        // bottom-bar badge needs the unread count while any other tab is open.
+        // Shell-scoped, so it is disposed (and its state dropped) on logout.
+        builder: (context, state, navigationShell) => BlocProvider(
+          create: (_) {
+            final cubit = getIt<NotificationsCubit>();
+            unawaited(cubit.load());
+            return cubit;
+          },
+          child: CustomerShell(navigationShell: navigationShell),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -152,8 +164,7 @@ class AppRouter {
               GoRoute(
                 path: Routes.customerNotifications.path,
                 name: Routes.customerNotifications.name,
-                builder: (context, state) =>
-                    ComingSoonPage(title: context.l10n.tabNotifications),
+                builder: (context, state) => const NotificationsPage(),
               ),
             ],
           ),
