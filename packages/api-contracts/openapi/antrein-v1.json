@@ -2221,6 +2221,41 @@
       }
     },
     "/api/v1/businesses/{businessId}/staff/{staffId}/schedule": {
+      "get": {
+        "operationId": "SchedulesController_getStaffSchedule",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a staff weekly schedule",
+        "tags": [
+          "schedules"
+        ]
+      },
       "put": {
         "operationId": "SchedulesController_replaceStaffSchedule",
         "parameters": [

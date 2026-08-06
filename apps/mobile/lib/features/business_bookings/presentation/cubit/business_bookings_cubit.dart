@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:antrein/core/network/api_error_codes.dart';
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/core/utils/typedefs.dart';
 import 'package:antrein/features/booking/booking.dart';
 import 'package:antrein/features/business_bookings/domain/repositories/business_bookings_repository.dart';
@@ -153,7 +152,7 @@ class BusinessBookingsCubit extends Cubit<BusinessBookingsState> {
     );
 
     final keyId = '${action.name}:${booking.id}';
-    final result = await run(_keys[keyId] ??= _newKey());
+    final result = await run(_keys[keyId] ??= newIdempotencyKey());
     await result.match(
       (failure) async {
         if (failure.code != null) _keys.remove(keyId);
@@ -173,11 +172,5 @@ class BusinessBookingsCubit extends Cubit<BusinessBookingsState> {
         await _fetch(silent: true);
       },
     );
-  }
-
-  static String _newKey() {
-    final random = Random();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_'
-        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 }

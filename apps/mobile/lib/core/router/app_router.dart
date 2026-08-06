@@ -17,12 +17,16 @@ import 'package:antrein/features/booking/presentation/pages/my_bookings_page.dar
 import 'package:antrein/features/booking/presentation/pages/slot_picker_page.dart';
 import 'package:antrein/features/business_bookings/business_bookings.dart';
 import 'package:antrein/features/business_dashboard/presentation/pages/business_home_page.dart';
+import 'package:antrein/features/business_management/business_management.dart';
 import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
 import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
 import 'package:antrein/features/notifications/notifications.dart';
 import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
 import 'package:antrein/features/reports/reports.dart';
+import 'package:antrein/features/schedule_management/schedule_management.dart';
+import 'package:antrein/features/service_management/service_management.dart';
+import 'package:antrein/features/staff_management/staff_management.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +41,17 @@ class AppRouter {
   AppRouter(this.authCubit);
 
   final AuthCubit authCubit;
+
+  /// Permission on the primary membership. Read from the auth state rather than
+  /// the widget tree so a route builder never has to look it up itself; the
+  /// backend re-checks every mutation regardless.
+  bool _can(String permission) {
+    final state = authCubit.state;
+    final membership = state is AuthAuthenticated
+        ? state.user.primaryMembership
+        : null;
+    return membership?.can(permission) ?? false;
+  }
 
   late final GoRouter router = GoRouter(
     initialLocation: Routes.customerHome.path,
@@ -93,6 +108,49 @@ class AppRouter {
           businessId: state.pathParameters['businessId']!,
           outletId: state.pathParameters['outletId']!,
         ),
+      ),
+      // Management screens. Each takes its own permission from the membership
+      // the business shell resolved, so a staff account reaches them read-only.
+      GoRoute(
+        path: Routes.businessServices.path,
+        name: Routes.businessServices.name,
+        builder: (context, state) => ServiceManagementPage(
+          businessId: state.pathParameters['businessId']!,
+          canManage: _can('service.manage'),
+        ),
+      ),
+      GoRoute(
+        path: Routes.businessStaff.path,
+        name: Routes.businessStaff.name,
+        builder: (context, state) => StaffManagementPage(
+          businessId: state.pathParameters['businessId']!,
+          outletId: state.pathParameters['outletId']!,
+          canManage: _can('staff.manage'),
+        ),
+      ),
+      GoRoute(
+        path: Routes.businessSchedule.path,
+        name: Routes.businessSchedule.name,
+        builder: (context, state) => ScheduleManagementPage(
+          businessId: state.pathParameters['businessId']!,
+          outletId: state.pathParameters['outletId']!,
+          canManageOutlet: _can('business.manage'),
+          canManageStaff: _can('staff.manage'),
+        ),
+      ),
+      GoRoute(
+        path: Routes.businessSettings.path,
+        name: Routes.businessSettings.name,
+        builder: (context, state) => BusinessSettingsPage(
+          businessId: state.pathParameters['businessId']!,
+          outletId: state.pathParameters['outletId']!,
+          canManage: _can('business.manage'),
+        ),
+      ),
+      GoRoute(
+        path: Routes.createBusiness.path,
+        name: Routes.createBusiness.name,
+        builder: (context, state) => const CreateBusinessPage(),
       ),
       // Booking flow — full-screen pages pushed over the customer shell.
       GoRoute(

@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/features/customer_queue/domain/entities/queue_entry.dart';
 import 'package:antrein/features/customer_queue/domain/usecases/check_in.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +23,7 @@ class CheckInCubit extends Cubit<CheckInState> {
   Future<void> submit(String bookingId) async {
     if (state is CheckInSubmitting) return;
     emit(const CheckInState.submitting());
-    final key = _idempotencyKey ??= _newKey();
+    final key = _idempotencyKey ??= newIdempotencyKey();
     final result = await _checkIn(
       CheckInParams(bookingId: bookingId, idempotencyKey: key),
     );
@@ -41,11 +40,5 @@ class CheckInCubit extends Cubit<CheckInState> {
         emit(CheckInState.success(entry));
       },
     );
-  }
-
-  static String _newKey() {
-    final random = Random();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_'
-        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 }

@@ -34,6 +34,41 @@ abstract final class ApiEndpoints {
   static String bookingReview(String bookingId) =>
       '/bookings/$bookingId/review';
 
+  // Business management (contract §43–§46). Creation posts to [businesses];
+  // the service/staff list paths above are shared with public discovery — the
+  // management screens just pass `activeOnly=false`.
+  static String businessManagement(String businessId) =>
+      '/businesses/$businessId/management';
+  static String outletDetail(String businessId, String outletId) =>
+      '/businesses/$businessId/outlets/$outletId';
+
+  // Service management (§47–§49)
+  static String serviceDetail(String businessId, String serviceId) =>
+      '/businesses/$businessId/services/$serviceId';
+  static String serviceDeactivate(String businessId, String serviceId) =>
+      '/businesses/$businessId/services/$serviceId/deactivate';
+
+  // Staff management (§50, §52, §53)
+  static String staffInvitations(String businessId) =>
+      '/businesses/$businessId/staff/invitations';
+  static String staffDetail(String businessId, String staffId) =>
+      '/businesses/$businessId/staff/$staffId';
+  static String staffDeactivate(String businessId, String staffId) =>
+      '/businesses/$businessId/staff/$staffId/deactivate';
+
+  /// §51 — the invited user accepts from their own account, so this one is not
+  /// business-scoped.
+  static String staffInvitationAccept(String invitationId) =>
+      '/staff/invitations/$invitationId/accept';
+
+  // Schedule management (§54–§58.1)
+  static String operatingHours(String businessId, String outletId) =>
+      '/businesses/$businessId/outlets/$outletId/operating-hours';
+  static String closedDates(String businessId, String outletId) =>
+      '/businesses/$businessId/outlets/$outletId/closed-dates';
+  static String staffSchedule(String businessId, String staffId) =>
+      '/businesses/$businessId/staff/$staffId/schedule';
+
   // Reports (business — contract §98)
   static String dailySummary(String businessId) =>
       '/businesses/$businessId/reports/daily-summary';

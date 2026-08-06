@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/features/booking/domain/entities/booking.dart';
 import 'package:antrein/features/booking/domain/entities/payment_info.dart';
 import 'package:antrein/features/booking/domain/repositories/booking_repository.dart';
@@ -71,7 +70,7 @@ class BookingDetailCubit extends Cubit<BookingDetailState> {
     final result = await _cancelBooking(
       CancelBookingParams(
         bookingId: booking.id,
-        idempotencyKey: _newKey(),
+        idempotencyKey: newIdempotencyKey(),
         reasonCode: reasonCode,
         reason: reason,
       ),
@@ -112,11 +111,5 @@ class BookingDetailCubit extends Cubit<BookingDetailState> {
         }
       },
     );
-  }
-
-  static String _newKey() {
-    final random = Random();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_'
-        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 }

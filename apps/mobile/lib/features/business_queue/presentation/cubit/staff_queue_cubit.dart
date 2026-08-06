@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:antrein/core/network/api_error_codes.dart';
 import 'package:antrein/core/realtime/realtime_client.dart';
 import 'package:antrein/core/realtime/realtime_event.dart';
+import 'package:antrein/core/utils/idempotency.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_board.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_board_entry.dart';
 import 'package:antrein/features/business_queue/domain/entities/queue_command.dart';
@@ -124,7 +124,7 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
       queueEntryId: entry.queueEntryId,
       command: command,
       expectedVersion: entry.version,
-      idempotencyKey: _newKey(),
+      idempotencyKey: newIdempotencyKey(),
       reason: reason,
       staffId: staffId,
     );
@@ -218,7 +218,7 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
       serviceId: serviceId,
       customerName: customerName,
       phoneNumber: phoneNumber,
-      idempotencyKey: _newKey(),
+      idempotencyKey: newIdempotencyKey(),
     );
     await result.match(
       (failure) async => emit(
@@ -282,7 +282,7 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
         for (final e in board.skipped) e.queueEntryId,
       ],
       reason: reason,
-      idempotencyKey: _newKey(),
+      idempotencyKey: newIdempotencyKey(),
     );
     result.match(
       (failure) => emit(
@@ -365,12 +365,6 @@ class StaffQueueCubit extends Cubit<StaffQueueState> {
       if (state.actingEntryId != null) return;
       unawaited(refresh());
     });
-  }
-
-  static String _newKey() {
-    final random = Random();
-    return 'idem_${DateTime.now().microsecondsSinceEpoch}_'
-        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 
   @override

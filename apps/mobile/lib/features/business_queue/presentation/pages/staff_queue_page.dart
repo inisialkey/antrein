@@ -88,6 +88,17 @@ class _StaffQueueView extends StatelessWidget {
       appBar: AppBar(
         title: Text(businessName ?? l10n.queueTitle),
         actions: [
+          Builder(
+            builder: (context) {
+              // Needs the resolved outlet, so it appears with the board.
+              final outletId = context.select<StaffQueueCubit, String?>(
+                (cubit) => cubit.state.board?.outletId,
+              );
+              return outletId == null
+                  ? const SizedBox.shrink()
+                  : _ManageMenu(businessId: businessId, outletId: outletId);
+            },
+          ),
           if (canViewBookings || canViewReports)
             Builder(
               builder: (context) {
@@ -196,6 +207,77 @@ class _StaffQueueView extends StatelessWidget {
         builder: (_) =>
             BlocProvider.value(value: cubit, child: const _WalkInSheet()),
       ),
+    );
+  }
+}
+
+/// Entry point to the management screens (contract §43–§58.1). An entry shows
+/// when the membership can read or manage that area, so a barber sees no menu
+/// at all and a manager sees the screens read-only.
+class _ManageMenu extends StatelessWidget {
+  const _ManageMenu({required this.businessId, required this.outletId});
+
+  final String businessId;
+  final String outletId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final authState = context.watch<AuthCubit>().state;
+    final membership = authState is AuthAuthenticated
+        ? authState.user.primaryMembership
+        : null;
+    if (membership == null) return const SizedBox.shrink();
+
+    bool canOpen(List<String> permissions) => permissions.any(membership.can);
+
+    final entries = <(Routes, String, bool)>[
+      (
+        Routes.businessServices,
+        l10n.servicesTitle,
+        canOpen(['service.read', 'service.manage']),
+      ),
+      (
+        Routes.businessStaff,
+        l10n.staffTitle,
+        canOpen(['staff.read', 'staff.manage']),
+      ),
+      (
+        Routes.businessSchedule,
+        l10n.scheduleTitle,
+        canOpen([
+          'schedule.read',
+          'schedule.manage',
+          'staff.manage',
+          'business.manage',
+        ]),
+      ),
+      (
+        Routes.businessSettings,
+        l10n.settingsTitle,
+        canOpen(['business.read', 'business.manage']),
+      ),
+    ].where((entry) => entry.$3).toList();
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    return PopupMenuButton<Routes>(
+      icon: const Icon(Icons.tune),
+      tooltip: l10n.manageMenu,
+      onSelected: (route) => unawaited(
+        context.pushNamed(
+          route.name,
+          pathParameters: {
+            'businessId': businessId,
+            // The service catalog is business-scoped, and go_router rejects a
+            // parameter its path has no slot for.
+            if (route != Routes.businessServices) 'outletId': outletId,
+          },
+        ),
+      ),
+      itemBuilder: (_) => [
+        for (final entry in entries)
+          PopupMenuItem(value: entry.$1, child: Text(entry.$2)),
+      ],
     );
   }
 }

@@ -23,10 +23,18 @@ enum Routes {
   bookingDetail('/booking/:bookingId'),
   customerQueue('/queue/:bookingId'),
 
-  // Business shell (stub until M4)
+  // Business shell
   businessHome('/business'),
   businessBookings('/business/bookings/:businessId/:outletId'),
-  businessReports('/business/reports/:businessId/:outletId');
+  businessReports('/business/reports/:businessId/:outletId'),
+  businessServices('/business/services/:businessId'),
+  businessStaff('/business/staff/:businessId/:outletId'),
+  businessSchedule('/business/schedule/:businessId/:outletId'),
+  businessSettings('/business/settings/:businessId/:outletId'),
+
+  // Business onboarding. Deliberately outside `/business/*`: that prefix is
+  // gated on business access, which the user asking for this page lacks.
+  createBusiness('/create-business');
 
   const Routes(this.path);
 
