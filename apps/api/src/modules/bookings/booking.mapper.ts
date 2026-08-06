@@ -66,7 +66,15 @@ export function toBookingResource(
           name: booking.customer.name,
           phoneNumber: booking.customer.phoneNumber,
         }
-      : null,
+      : // A walk-in has no account, but §65 still owes the counter a name to
+        // call — it lives on the booking row. Business view only.
+        opts.businessView && booking.walkInCustomerName
+        ? {
+            id: null,
+            name: booking.walkInCustomerName,
+            phoneNumber: booking.walkInPhoneNumber,
+          }
+        : null,
     business: { id: booking.businessId, name: snapshot?.businessName ?? null },
     outlet: {
       id: booking.outletId,
