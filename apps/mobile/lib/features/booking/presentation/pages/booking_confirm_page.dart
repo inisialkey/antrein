@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:antrein/core/di/injection.dart';
 import 'package:antrein/core/extensions/extensions.dart';
 import 'package:antrein/core/network/api_error_codes.dart';
@@ -81,9 +83,19 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(l10n.bookingCreated)),
               );
-              context.goNamed(
-                Routes.bookingDetail.name,
-                pathParameters: {'bookingId': creation.booking.id},
+              // The booking flow (business detail → slots → confirm) is spent,
+              // so it must not stay under the receipt. `go` alone would leave
+              // the detail page unpoppable — device back would close the app —
+              // so land on the bookings tab and push the receipt over it.
+              // The router is captured first: this page is gone after `go`, and
+              // a context lookup on a defunct widget throws.
+              final router = GoRouter.of(context);
+              router.goNamed(Routes.customerBookings.name);
+              unawaited(
+                router.pushNamed(
+                  Routes.bookingDetail.name,
+                  pathParameters: {'bookingId': creation.booking.id},
+                ),
               );
             case CreateBookingError(:final message, :final code):
               ScaffoldMessenger.of(context).showSnackBar(

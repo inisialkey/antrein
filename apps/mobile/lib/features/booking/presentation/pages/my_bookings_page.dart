@@ -29,8 +29,46 @@ class MyBookingsPage extends StatelessWidget {
   );
 }
 
-class _MyBookingsView extends StatelessWidget {
+class _MyBookingsView extends StatefulWidget {
   const _MyBookingsView();
+
+  @override
+  State<_MyBookingsView> createState() => _MyBookingsViewState();
+}
+
+/// The tab keeps its state while a full-screen route (booking detail, queue,
+/// the booking flow) covers it, so the list is stale by the time the user comes
+/// back — bookings get created, cancelled and checked in up there. Watching the
+/// router instead of [RouteAware]: the shell is a `StatefulShellRoute`, so this
+/// page lives in a *branch* navigator that a root [RouteObserver] never sees.
+class _MyBookingsViewState extends State<_MyBookingsView> {
+  GoRouter? _router;
+  bool _wasCovered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_router != null) return;
+    _router = GoRouter.of(context)..routerDelegate.addListener(_onNavigation);
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_onNavigation);
+    super.dispose();
+  }
+
+  void _onNavigation() {
+    if (!mounted) return;
+    final onTab =
+        _router!.state.matchedLocation == Routes.customerBookings.path;
+    if (!onTab) {
+      _wasCovered = true;
+    } else if (_wasCovered) {
+      _wasCovered = false;
+      unawaited(context.read<MyBookingsCubit>().refresh());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,15 +97,13 @@ class _MyBookingsView extends StatelessWidget {
                 final booking = state.bookings[index];
                 return _BookingCard(
                   booking: booking,
-                  onTap: () async {
-                    await context.pushNamed(
+                  // No refresh-on-return here — [_onNavigation] covers it.
+                  onTap: () => unawaited(
+                    context.pushNamed(
                       Routes.bookingDetail.name,
                       pathParameters: {'bookingId': booking.id},
-                    );
-                    if (context.mounted) {
-                      await context.read<MyBookingsCubit>().refresh();
-                    }
-                  },
+                    ),
+                  ),
                 );
               },
             ),
