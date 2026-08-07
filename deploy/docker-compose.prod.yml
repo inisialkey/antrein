@@ -41,6 +41,10 @@ services:
     # Never published to the host: Caddy is the only way in.
     expose:
       - "3000"
+    volumes:
+      # Uploaded images (ADR 0046). Survives image rebuilds; backed up with
+      # the database (docs/ops/runbook.md §5).
+      - filestorage:/data/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,5 +88,6 @@ services:
 
 volumes:
   pgdata:
+  filestorage:
   caddy_data:
   caddy_config:

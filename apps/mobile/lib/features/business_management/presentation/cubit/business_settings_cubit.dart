@@ -1,4 +1,6 @@
 import 'package:antrein/core/error/failures.dart';
+import 'package:antrein/core/files/file_upload_repository.dart';
+import 'package:antrein/core/utils/typedefs.dart';
 import 'package:antrein/features/business_management/domain/entities/managed_business.dart';
 import 'package:antrein/features/business_management/domain/repositories/business_management_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,9 +15,11 @@ part 'business_settings_cubit.freezed.dart';
 /// the business first, then the outlet.
 @injectable
 class BusinessSettingsCubit extends Cubit<BusinessSettingsState> {
-  BusinessSettingsCubit(this._repo) : super(const BusinessSettingsState());
+  BusinessSettingsCubit(this._repo, this._files)
+    : super(const BusinessSettingsState());
 
   final BusinessManagementRepository _repo;
+  final FileUploadRepository _files;
 
   late String _businessId;
   late String _outletId;
@@ -54,6 +58,11 @@ class BusinessSettingsCubit extends Cubit<BusinessSettingsState> {
       ),
     );
   }
+
+  /// Uploads a logo (§36). The page keeps the returned id on its editable copy
+  /// until save attaches it.
+  ResultFuture<UploadedImage> uploadLogo(String path) =>
+      _files.upload(filePath: path, purpose: FilePurpose.businessLogo);
 
   /// §45 then §46 — both need `business.manage`, so they share one action.
   /// The outlet write is skipped when the outlet never loaded.

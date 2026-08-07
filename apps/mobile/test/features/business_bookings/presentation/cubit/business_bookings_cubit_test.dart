@@ -274,4 +274,139 @@ void main() {
       ).called(1),
     );
   });
+
+  group('refund (§70 + §74)', () {
+    PaymentInfo payment({
+      String id = 'pay_1',
+      String provider = 'sandbox',
+      String status = 'paid',
+    }) => PaymentInfo(
+      id: id,
+      bookingId: 'bkg_1',
+      provider: provider,
+      status: status,
+      amount: const Money(50000),
+    );
+
+    blocTest<BusinessBookingsCubit, BusinessBookingsState>(
+      'picks the online payment and ignores the counter one',
+      build: build,
+      setUp: () => when(() => repo.listPayments(any())).thenAnswer(
+        (_) async => Right([
+          payment(id: 'pay_pal', provider: 'pay_at_location'),
+          payment(id: 'pay_online'),
+        ]),
+      ),
+      act: (cubit) async {
+        await loaded(cubit);
+        await cubit.loadRefundable('bkg_1');
+      },
+      verify: (cubit) {
+        expect(cubit.state.refundable?.id, 'pay_online');
+        expect(cubit.state.isLoadingRefundable, isFalse);
+      },
+    );
+
+    blocTest<BusinessBookingsCubit, BusinessBookingsState>(
+      'leaves nothing refundable when only counter money was taken',
+      build: build,
+      setUp: () => when(() => repo.listPayments(any())).thenAnswer(
+        (_) async =>
+            Right([payment(id: 'pay_pal', provider: 'pay_at_location')]),
+      ),
+      act: (cubit) async {
+        await loaded(cubit);
+        await cubit.loadRefundable('bkg_1');
+      },
+      verify: (cubit) => expect(cubit.state.refundable, isNull),
+    );
+
+    blocTest<BusinessBookingsCubit, BusinessBookingsState>(
+      'refunds the payment in full and resyncs the day',
+      build: build,
+      setUp: () {
+        when(() => repo.listPayments(any())).thenAnswer(
+          (_) async => Right([payment()]),
+        );
+        when(
+          () => repo.requestRefund(
+            businessId: any(named: 'businessId'),
+            paymentId: any(named: 'paymentId'),
+            amount: any(named: 'amount'),
+            reasonCode: any(named: 'reasonCode'),
+            reason: any(named: 'reason'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer((_) async => const Right(null));
+      },
+      act: (cubit) async {
+        await loaded(cubit);
+        await cubit.refund(
+          booking: booking(),
+          payment: payment(),
+          reason: 'Barber tidak hadir',
+        );
+      },
+      verify: (cubit) {
+        verify(
+          () => repo.requestRefund(
+            businessId: 'biz_1',
+            paymentId: 'pay_1',
+            amount: const Money(50000),
+            reasonCode: 'business_requested',
+            reason: 'Barber tidak hadir',
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).called(1);
+        expect(cubit.state.actionDone, BookingDeskAction.refunded);
+        // Two list reads: the initial load plus the post-refund resync.
+        verify(
+          () => repo.list(
+            businessId: any(named: 'businessId'),
+            outletId: any(named: 'outletId'),
+            date: any(named: 'date'),
+          ),
+        ).called(2);
+      },
+    );
+
+    blocTest<BusinessBookingsCubit, BusinessBookingsState>(
+      'surfaces a rejected refund without marking it done',
+      build: build,
+      setUp: () {
+        when(() => repo.listPayments(any())).thenAnswer(
+          (_) async => Right([payment()]),
+        );
+        when(
+          () => repo.requestRefund(
+            businessId: any(named: 'businessId'),
+            paymentId: any(named: 'paymentId'),
+            amount: any(named: 'amount'),
+            reasonCode: any(named: 'reasonCode'),
+            reason: any(named: 'reason'),
+            idempotencyKey: any(named: 'idempotencyKey'),
+          ),
+        ).thenAnswer(
+          (_) async => const Left(
+            ServerFailure(
+              'Refund sudah diproses.',
+              code: ApiErrorCodes.refundAlreadyPending,
+            ),
+          ),
+        );
+      },
+      act: (cubit) async {
+        await loaded(cubit);
+        await cubit.refund(
+          booking: booking(),
+          payment: payment(),
+          reason: 'Dobel bayar',
+        );
+      },
+      verify: (cubit) {
+        expect(cubit.state.actionDone, isNull);
+        expect(cubit.state.actionError, 'Refund sudah diproses.');
+      },
+    );
+  });
 }

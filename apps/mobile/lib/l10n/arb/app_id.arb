@@ -358,5 +358,35 @@
   "manageMenu": "Kelola",
   "profileBusinessSection": "Bisnis",
   "profileCreateBusiness": "Daftarkan bisnis",
-  "profileJoinBusiness": "Gabung pakai undangan"
+  "profileJoinBusiness": "Gabung pakai undangan",
+
+  "refundAction": "Refund",
+  "refundTitle": "Refund {amount}?",
+  "@refundTitle": { "placeholders": { "amount": { "type": "String" } } },
+  "refundWarning": "Dana dikembalikan ke pelanggan lewat penyedia pembayaran. Tidak bisa dibatalkan.",
+  "refundReasonHint": "Alasan refund (wajib)",
+  "refundNoneAvailable": "Tidak ada pembayaran online yang bisa direfund di booking ini.",
+  "refundRequested": "Refund diajukan. Penyedia pembayaran memprosesnya sebentar lagi.",
+
+  "profileEditTitle": "Ubah profil",
+  "profileEditSaved": "Profil diperbarui.",
+  "profileFullName": "Nama lengkap",
+  "profilePhotoChange": "Ganti foto",
+  "profilePhotoRemove": "Hapus foto",
+
+  "notificationPrefsTitle": "Notifikasi",
+  "notificationPrefsSubtitle": "Pilih apa saja yang boleh AntreIn kirim ke HP ini.",
+  "notificationPrefsSaved": "Preferensi tersimpan.",
+  "notificationPrefsLoadFailed": "Preferensi gagal dimuat.",
+  "notificationPrefBooking": "Info booking",
+  "notificationPrefPayment": "Info pembayaran",
+  "notificationPrefQueue": "Info antrean",
+  "notificationPrefMarketing": "Promo",
+
+  "imagePick": "Pilih gambar",
+  "imageReplace": "Ganti gambar",
+  "imageRemove": "Hapus gambar",
+  "imageSourceGallery": "Galeri",
+  "imageSourceCamera": "Kamera",
+  "imageUploadFailed": "Gambar gagal diunggah."
 }

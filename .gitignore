@@ -23,6 +23,8 @@ npm-debug.log*
 # Prisma
 apps/api/prisma/*.db
 apps/api/src/generated/
+# Local upload root (ADR 0046); production uses a Docker volume.
+apps/api/storage/
 
 # Flutter / Dart (apps/mobile)
 .dart_tool/

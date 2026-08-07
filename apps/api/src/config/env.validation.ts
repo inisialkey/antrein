@@ -151,6 +151,18 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   ONESIGNAL_API_KEY?: string;
+
+  /** Object storage adapter (ADR 0046). Only 'local' exists in the MVP. */
+  @IsIn(['local'])
+  STORAGE_PROVIDER = 'local';
+
+  /** Directory the local adapter writes to; relative paths resolve from cwd. */
+  @IsString()
+  STORAGE_LOCAL_ROOT = 'storage';
+
+  /** Origin used to build public file URLs (§37.1); must match the deployed host. */
+  @IsString()
+  PUBLIC_API_URL = 'http://localhost:3000';
 }
 
 const NUMERIC_KEYS = [
@@ -194,6 +206,11 @@ function assertProductionConfig(env: EnvironmentVariables): void {
   }
   if (env.AUTH_RATE_LIMIT_DISABLED === 'true') {
     problems.push('AUTH_RATE_LIMIT_DISABLED is a test-only escape hatch');
+  }
+  // PUBLIC_API_URL is baked into every file URL handed to a client (§37.1), so
+  // the localhost default would ship images nobody can load.
+  if (!/^https:\/\//.test(env.PUBLIC_API_URL)) {
+    problems.push('PUBLIC_API_URL must be the public https origin of this API');
   }
 
   if (problems.length > 0) {

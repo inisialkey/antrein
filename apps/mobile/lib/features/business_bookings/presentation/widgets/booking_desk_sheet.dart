@@ -12,7 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
 /// Counter sheet for one booking: customer contact, payment state, and the
-/// three staff actions (§73 confirm, §68.1 cancel, §68 no-show).
+/// staff actions (§73 confirm, §74 refund, §68.1 cancel, §68 no-show).
 ///
 /// Holds the id, not the booking — every resync flows through, so a figure the
 /// staff acts on is never one the list has already superseded.
@@ -22,6 +22,7 @@ class BookingDeskSheet extends StatelessWidget {
     required this.canConfirmPayment,
     required this.canManageBooking,
     required this.canManageQueue,
+    required this.canRefund,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class BookingDeskSheet extends StatelessWidget {
   final bool canConfirmPayment;
   final bool canManageBooking;
   final bool canManageQueue;
+  final bool canRefund;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +126,15 @@ class BookingDeskSheet extends StatelessWidget {
                   ),
                   const Gap(Dimens.space8),
                 ],
+                if (canRefund &&
+                    summary != null &&
+                    summary.paidAmount.amount > 0)
+                  OutlinedButton(
+                    onPressed: busy || state.isLoadingRefundable
+                        ? null
+                        : () => unawaited(_startRefund(context, booking)),
+                    child: Text(l10n.refundAction),
+                  ),
                 if (canManageQueue && booking.status == BookingStatus.confirmed)
                   OutlinedButton(
                     onPressed: busy
@@ -193,6 +204,65 @@ class BookingDeskSheet extends StatelessWidget {
     );
     if (method != null) {
       await cubit.confirmPayment(booking: booking, method: method);
+    }
+  }
+
+  /// §74 needs a payment id, which the booking payload does not carry — read
+  /// the payments first, then confirm against the figure the backend will move.
+  Future<void> _startRefund(BuildContext context, Booking booking) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final cubit = context.read<BusinessBookingsCubit>();
+
+    await cubit.loadRefundable(booking.id);
+    if (!context.mounted) return;
+    final payment = cubit.state.refundable;
+    if (payment == null) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(cubit.state.actionError ?? l10n.refundNoneAvailable),
+          ),
+        );
+      return;
+    }
+
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.refundTitle(payment.amount.formatted)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.refundWarning),
+            const Gap(Dimens.space12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: 500,
+              decoration: InputDecoration(hintText: l10n.refundReasonHint),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(l10n.refundAction),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    // A refund is money leaving the business — the audit row needs a reason.
+    if (reason != null && reason.isNotEmpty) {
+      await cubit.refund(booking: booking, payment: payment, reason: reason);
     }
   }
 

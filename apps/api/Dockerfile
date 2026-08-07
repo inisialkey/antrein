@@ -33,6 +33,11 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY package.json prisma.config.ts ./
 
+# Uploaded images (ADR 0046). Creating the directory here — owned by `node` —
+# makes the named volume mounted over it inherit that ownership, which is what
+# lets the non-root process write to it.
+RUN mkdir -p /data/storage && chown -R node:node /data
+
 ARG GIT_SHA=unknown
 LABEL org.opencontainers.image.title="antrein-api" \
       org.opencontainers.image.source="https://github.com/inisialkey/antrein" \

@@ -39,4 +39,19 @@ abstract class BusinessBookingsRepository {
     required String idempotencyKey,
     String? reason,
   });
+
+  /// Payments recorded against a booking (§70) — the refund flow needs the
+  /// payment id and provider, which the booking payload does not carry.
+  ResultFuture<List<PaymentInfo>> listPayments(String bookingId);
+
+  /// Business-initiated refund (§74). Asynchronous: a 202 means the provider
+  /// was asked, not that money moved — the payment status carries the outcome.
+  ResultVoid requestRefund({
+    required String businessId,
+    required String paymentId,
+    required Money amount,
+    required String reasonCode,
+    required String reason,
+    required String idempotencyKey,
+  });
 }

@@ -22,7 +22,7 @@ import 'package:antrein/features/customer_queue/customer_queue.dart';
 import 'package:antrein/features/discovery/presentation/pages/business_detail_page.dart';
 import 'package:antrein/features/discovery/presentation/pages/discovery_page.dart';
 import 'package:antrein/features/notifications/notifications.dart';
-import 'package:antrein/features/profile/presentation/pages/profile_page.dart';
+import 'package:antrein/features/profile/profile.dart';
 import 'package:antrein/features/reports/reports.dart';
 import 'package:antrein/features/schedule_management/schedule_management.dart';
 import 'package:antrein/features/service_management/service_management.dart';
@@ -151,6 +151,16 @@ class AppRouter {
         path: Routes.createBusiness.path,
         name: Routes.createBusiness.name,
         builder: (context, state) => const CreateBusinessPage(),
+      ),
+      GoRoute(
+        path: Routes.profileEdit.path,
+        name: Routes.profileEdit.name,
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: Routes.notificationPreferences.path,
+        name: Routes.notificationPreferences.name,
+        builder: (context, state) => const NotificationPreferencesPage(),
       ),
       // Booking flow — full-screen pages pushed over the customer shell.
       GoRoute(

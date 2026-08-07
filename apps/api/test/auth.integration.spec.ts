@@ -40,6 +40,9 @@ describe('Auth endpoints (integration)', () => {
   let http: () => request.Agent;
 
   const uniqueEmail = (): string => `it-${randomUUID()}@example.com`;
+  let phoneSeq = 0;
+  const uniquePhone = (): string =>
+    `+62${String(Date.now()).slice(-9)}${String(phoneSeq++).padStart(2, '0')}`;
 
   const registerUser = async (
     emailAddr = uniqueEmail(),
@@ -78,9 +81,12 @@ describe('Auth endpoints (integration)', () => {
   describe('register', () => {
     it('creates a user, preferences, and an initial session', async () => {
       const emailAddr = uniqueEmail();
+      // Unique per run: phone_number_normalized is a unique index, and the
+      // integration database is not dropped between runs.
+      const phone = uniquePhone();
       const res = await http()
         .post('/api/v1/auth/register')
-        .send({ name: 'Oki', email: emailAddr, phoneNumber: '+6281234567890', password: PASSWORD })
+        .send({ name: 'Oki', email: emailAddr, phoneNumber: phone, password: PASSWORD })
         .expect(201);
 
       expect(res.body.success).toBe(true);
@@ -102,6 +108,26 @@ describe('Auth endpoints (integration)', () => {
         .expect(200);
       expect(me.body.data.id).toBe(user.id);
       expect(me.body.data.notificationPreferences.bookingUpdates).toBe(true);
+    });
+
+    it('rejects a phone number that already belongs to another account', async () => {
+      const phone = uniquePhone();
+      await http()
+        .post('/api/v1/auth/register')
+        .send({ name: 'First', email: uniqueEmail(), phoneNumber: phone, password: PASSWORD })
+        .expect(201);
+
+      const res = await http()
+        .post('/api/v1/auth/register')
+        // Same number, different formatting — normalization is what collides.
+        .send({
+          name: 'Second',
+          email: uniqueEmail(),
+          phoneNumber: phone.replace('+62', '+62 '),
+          password: PASSWORD,
+        })
+        .expect(409);
+      expect(res.body.error.code).toBe('USER_PHONE_ALREADY_USED');
     });
 
     it('rejects a duplicate email case-insensitively with 409', async () => {

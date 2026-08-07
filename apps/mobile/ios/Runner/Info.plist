@@ -49,6 +49,12 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- image_picker (§36 uploads). iOS terminates the app on first use if
+	     either string is missing. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Ambil foto untuk logo, foto layanan, atau foto profil Anda.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pilih gambar untuk logo, foto layanan, atau foto profil Anda.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -1,4 +1,5 @@
 import 'package:antrein/core/error/failures.dart';
+import 'package:antrein/core/files/file_upload_repository.dart';
 import 'package:antrein/features/business_management/business_management.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -7,8 +8,11 @@ import 'package:mocktail/mocktail.dart';
 class MockBusinessManagementRepository extends Mock
     implements BusinessManagementRepository {}
 
+class MockFileUploadRepository extends Mock implements FileUploadRepository {}
+
 void main() {
   late MockBusinessManagementRepository repo;
+  late final files = MockFileUploadRepository();
 
   const business = ManagedBusiness(
     id: 'biz_1',
@@ -39,7 +43,7 @@ void main() {
   });
 
   test('loads the business with its outlet', () async {
-    final cubit = BusinessSettingsCubit(repo);
+    final cubit = BusinessSettingsCubit(repo, files);
     await cubit.load('biz_1', 'out_1');
 
     expect(cubit.state.status, SettingsStatus.success);
@@ -53,7 +57,7 @@ void main() {
       () => repo.getOutlet(any(), any()),
     ).thenAnswer((_) async => const Left(ServerFailure('No detail.')));
 
-    final cubit = BusinessSettingsCubit(repo);
+    final cubit = BusinessSettingsCubit(repo, files);
     await cubit.load('biz_1', 'out_1');
 
     expect(cubit.state.status, SettingsStatus.success);
@@ -62,7 +66,7 @@ void main() {
   });
 
   test('one save writes the business then the outlet', () async {
-    final cubit = BusinessSettingsCubit(repo);
+    final cubit = BusinessSettingsCubit(repo, files);
     await cubit.load('biz_1', 'out_1');
 
     await cubit.save(business: business, outlet: outlet);
@@ -83,7 +87,7 @@ void main() {
       ),
     );
 
-    final cubit = BusinessSettingsCubit(repo);
+    final cubit = BusinessSettingsCubit(repo, files);
     await cubit.load('biz_1', 'out_1');
     await cubit.save(business: business, outlet: outlet);
 
@@ -98,7 +102,7 @@ void main() {
       () => repo.getOutlet(any(), any()),
     ).thenAnswer((_) async => const Right(null));
 
-    final cubit = BusinessSettingsCubit(repo);
+    final cubit = BusinessSettingsCubit(repo, files);
     await cubit.load('biz_1', 'out_1');
     await cubit.save(business: business);
 

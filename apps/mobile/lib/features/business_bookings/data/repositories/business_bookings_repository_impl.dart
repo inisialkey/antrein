@@ -92,4 +92,31 @@ class BusinessBookingsRepositoryImpl implements BusinessBookingsRepository {
       return Left(mapExceptionToFailure(e, label));
     }
   }
+
+  @override
+  ResultFuture<List<PaymentInfo>> listPayments(String bookingId) =>
+      _guard('listPayments', () async {
+        final models = await _remote.listPayments(bookingId);
+        return models.map((m) => m.toEntity()).toList();
+      });
+
+  @override
+  ResultVoid requestRefund({
+    required String businessId,
+    required String paymentId,
+    required Money amount,
+    required String reasonCode,
+    required String reason,
+    required String idempotencyKey,
+  }) => _guard(
+    'requestRefund',
+    () => _remote.requestRefund(
+      businessId: businessId,
+      paymentId: paymentId,
+      amount: amount,
+      reasonCode: reasonCode,
+      reason: reason,
+      idempotencyKey: idempotencyKey,
+    ),
+  );
 }

@@ -38,6 +38,7 @@ describe('validateEnv', () => {
       NODE_ENV: 'production',
       PAYMENT_WEBHOOK_SECRET: 'a-real-webhook-secret',
       SMTP_HOST: 'smtp.example.com',
+      PUBLIC_API_URL: 'https://api.example.com',
     };
 
     it('accepts a fully configured production environment', () => {
@@ -64,6 +65,17 @@ describe('validateEnv', () => {
       expect(() => validateEnv({ ...production, AUTH_RATE_LIMIT_DISABLED: 'true' })).toThrow(
         /AUTH_RATE_LIMIT_DISABLED/,
       );
+    });
+
+    it('rejects the localhost default for PUBLIC_API_URL', () => {
+      // It is baked into every file URL (§37.1), so the default ships images
+      // nobody outside the container can load.
+      expect(() => validateEnv({ ...production, PUBLIC_API_URL: undefined })).toThrow(
+        /PUBLIC_API_URL/,
+      );
+      expect(() =>
+        validateEnv({ ...production, PUBLIC_API_URL: 'http://api.example.com' }),
+      ).toThrow(/PUBLIC_API_URL/);
     });
 
     it('leaves non-production environments alone', () => {

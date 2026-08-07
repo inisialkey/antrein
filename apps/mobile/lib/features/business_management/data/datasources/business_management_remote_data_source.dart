@@ -49,6 +49,9 @@ class BusinessManagementRemoteDataSourceImpl
       data: {
         'name': business.name,
         'description': business.description,
+        // Omitted rather than null: a null would clear a logo the form never
+        // touched, and PATCH treats an absent key as "leave it".
+        if (business.logoFileId != null) 'logoFileId': business.logoFileId,
         'supportedPaymentOptions': business.supportedPaymentOptions,
         'bookingPolicy': {
           'minimumLeadMinutes': business.bookingPolicy.minimumLeadMinutes,

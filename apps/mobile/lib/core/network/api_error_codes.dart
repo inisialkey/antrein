@@ -40,6 +40,12 @@ abstract final class ApiErrorCodes {
   static const String paymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
   static const String paymentAlreadyPaid = 'PAYMENT_ALREADY_PAID';
 
+  // Refunds (api-contract §74)
+  static const String refundAlreadyPending = 'REFUND_ALREADY_PENDING';
+  static const String paymentNotRefundable = 'PAYMENT_NOT_REFUNDABLE';
+  static const String refundAmountExceedsPaid =
+      'REFUND_AMOUNT_EXCEEDS_PAID_AMOUNT';
+
   // Queue + check-in (api-contract §58/§122 — mirrors queue/domain/queue.errors.ts)
   static const String bookingCheckInTooEarly = 'BOOKING_CHECK_IN_TOO_EARLY';
   static const String bookingCheckInTooLate = 'BOOKING_CHECK_IN_TOO_LATE';

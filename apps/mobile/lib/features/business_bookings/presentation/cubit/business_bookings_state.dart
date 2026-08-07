@@ -3,7 +3,7 @@ part of 'business_bookings_cubit.dart';
 enum BookingDeskStatus { initial, loading, success, empty, failure }
 
 /// Which mutation just landed — the page turns it into a snackbar.
-enum BookingDeskAction { paymentConfirmed, cancelled, noShow }
+enum BookingDeskAction { paymentConfirmed, cancelled, noShow, refunded }
 
 /// Pay-at-location methods (api-contract §73, `PAY_AT_LOCATION_METHODS`).
 const List<String> payAtLocationMethods = [
@@ -27,6 +27,8 @@ abstract class BusinessBookingsState with _$BusinessBookingsState {
     String? actingBookingId,
     String? actionError,
     BookingDeskAction? actionDone,
+    @Default(false) bool isLoadingRefundable,
+    PaymentInfo? refundable,
   }) = _BusinessBookingsState;
 
   /// Live lookup for the detail sheet, which holds an id rather than a copy so

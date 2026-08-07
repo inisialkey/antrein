@@ -2240,6 +2240,12 @@ where status in ('pending', 'ready', 'failed');
 
 ## 46. File Attachments
 
+> **Not created in the MVP (ADR 0046).** Every owning resource already carries a
+> `*_file_id` column, now under a foreign key to `files`; `files.status` records
+> whether a file is attached and the pointer column records where. This table
+> lands when a purpose needs many files per resource — `business_gallery` is the
+> obvious one, and it has no endpoint in v1.
+
 ```sql
 create table file_attachments (
     id text primary key,

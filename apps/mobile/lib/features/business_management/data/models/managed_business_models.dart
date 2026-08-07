@@ -48,6 +48,7 @@ abstract class ManagedBusinessModel with _$ManagedBusinessModel {
     required String id,
     required String name,
     String? description,
+    String? logoUrl,
     @Default(<String>[]) List<String> supportedPaymentOptions,
     BookingPolicyModel? bookingPolicy,
     DepositPolicyModel? depositPolicy,
@@ -66,6 +67,7 @@ abstract class ManagedBusinessModel with _$ManagedBusinessModel {
       id: id,
       name: name,
       description: description,
+      logoUrl: logoUrl,
       supportedPaymentOptions: supportedPaymentOptions,
       bookingPolicy: BookingPolicy(
         minimumLeadMinutes:

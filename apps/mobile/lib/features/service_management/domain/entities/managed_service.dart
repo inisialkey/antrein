@@ -10,6 +10,7 @@ class ManagedService extends Equatable {
     required this.durationMinutes,
     required this.price,
     this.description,
+    this.imageUrl,
     this.depositValue = 0,
     this.eligibleStaffIds = const [],
     this.isActive = true,
@@ -18,6 +19,9 @@ class ManagedService extends Equatable {
   final String id;
   final String name;
   final String? description;
+
+  /// Absolute §37.1 URL, or null when no photo is attached.
+  final String? imageUrl;
   final int durationMinutes;
   final Money price;
 
@@ -34,6 +38,7 @@ class ManagedService extends Equatable {
     id,
     name,
     description,
+    imageUrl,
     durationMinutes,
     price,
     depositValue,
@@ -61,6 +66,7 @@ class ServiceDraft extends Equatable {
     required this.priceAmount,
     this.id,
     this.description,
+    this.imageFileId,
     this.depositValue = 0,
     this.eligibleStaffIds = const [],
     this.isActive = true,
@@ -69,6 +75,9 @@ class ServiceDraft extends Equatable {
   final String? id;
   final String name;
   final String? description;
+
+  /// A freshly uploaded file (§36) to attach; null leaves the photo unchanged.
+  final String? imageFileId;
   final int durationMinutes;
   final int priceAmount;
   final int depositValue;
@@ -82,6 +91,7 @@ class ServiceDraft extends Equatable {
     id,
     name,
     description,
+    imageFileId,
     durationMinutes,
     priceAmount,
     depositValue,

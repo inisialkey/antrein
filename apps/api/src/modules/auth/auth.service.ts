@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { uniqueViolationTarget } from '../../common/errors/unique-violation';
 import { newId } from '../../common/id/id';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Prisma, User } from '../../generated/prisma/client';
 import { MembershipsService } from '../memberships/memberships.service';
+import { userPhoneAlreadyUsed } from '../users/user.errors';
 import { toUserResponse, UserResponse } from '../users/user.mapper';
 import {
   accountInactive,
@@ -15,7 +17,7 @@ import {
   refreshTokenReused,
   sessionRevoked,
 } from './auth.errors';
-import { normalizeEmail, validatePasswordPolicy } from './auth.policies';
+import { normalizeEmail, normalizePhoneNumber, validatePasswordPolicy } from './auth.policies';
 import { DeviceDto, LoginDto, LogoutDto, RefreshDto, RegisterDto } from './dto/auth.dto';
 import { PasswordHasher } from './password.hasher';
 import { RateLimitService } from './rate-limit.service';
@@ -93,6 +95,7 @@ export class AuthService {
             email: dto.email.trim(),
             emailNormalized,
             phoneNumber: dto.phoneNumber ?? null,
+            phoneNumberNormalized: normalizePhoneNumber(dto.phoneNumber),
             name: dto.name.trim(),
             passwordHash,
             status: 'active',
@@ -106,7 +109,12 @@ export class AuthService {
       this.logger.log(`auth.registration_succeeded user=${userId}`);
       return { user: toUserResponse(user, []), session };
     } catch (error) {
-      if ((error as { code?: string }).code === 'P2002') throw emailAlreadyRegistered();
+      if ((error as { code?: string }).code === 'P2002') {
+        // Two unique indexes can fire here; the phone one must not be reported
+        // as a taken email.
+        if (uniqueViolationTarget(error).includes('phone')) throw userPhoneAlreadyUsed();
+        throw emailAlreadyRegistered();
+      }
       throw error;
     }
   }

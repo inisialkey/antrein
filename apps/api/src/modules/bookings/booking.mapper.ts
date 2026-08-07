@@ -92,7 +92,8 @@ export function toBookingResource(
       ? {
           id: booking.staffId,
           name: snapshot?.staffName ?? null,
-          // ponytail: avatar URLs land with the files milestone.
+          // ponytail: the snapshot stores names, not file ids — an avatar here
+          // needs a live staff_profiles join. Add it when a screen shows one.
           avatarUrl: null,
         }
       : null,

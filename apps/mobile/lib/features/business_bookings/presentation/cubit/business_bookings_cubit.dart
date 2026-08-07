@@ -125,6 +125,64 @@ class BusinessBookingsCubit extends Cubit<BusinessBookingsState> {
     );
   });
 
+  /// Loads the one refundable payment behind a booking (§70) so the sheet can
+  /// show the exact figure §74 will move. Pay-at-location money is settled at
+  /// the counter, not through the provider, so it is never refundable here.
+  ///
+  /// ponytail: takes the first match. A booking can hold at most one online
+  /// payment (a deposit's remainder settles pay-at-location), so a picker would
+  /// be a list of one.
+  Future<void> loadRefundable(String bookingId) async {
+    emit(
+      state.copyWith(
+        isLoadingRefundable: true,
+        refundable: null,
+        actionError: null,
+      ),
+    );
+    final result = await _repo.listPayments(bookingId);
+    result.match(
+      (failure) => emit(
+        state.copyWith(
+          isLoadingRefundable: false,
+          actionError: failure.message,
+        ),
+      ),
+      (payments) => emit(
+        state.copyWith(
+          isLoadingRefundable: false,
+          refundable: payments
+              .where(
+                (p) =>
+                    p.provider != 'pay_at_location' &&
+                    const {'paid', 'partially_refunded'}.contains(p.status),
+              )
+              .firstOrNull,
+        ),
+      ),
+    );
+  }
+
+  /// Full refund of [payment] (§74).
+  ///
+  /// ponytail: the amount is the payment in full. Partial refunds are a
+  /// backend field away — add an amount input when a business asks.
+  Future<void> refund({
+    required Booking booking,
+    required PaymentInfo payment,
+    required String reason,
+  }) => _act(booking, BookingDeskAction.refunded, (key) {
+    final businessId = _businessId!;
+    return _repo.requestRefund(
+      businessId: businessId,
+      paymentId: payment.id,
+      amount: payment.amount,
+      reasonCode: 'business_requested',
+      reason: reason,
+      idempotencyKey: key,
+    );
+  });
+
   Future<void> markNoShow({required Booking booking, String? reason}) =>
       _act(booking, BookingDeskAction.noShow, (key) {
         final businessId = _businessId!;

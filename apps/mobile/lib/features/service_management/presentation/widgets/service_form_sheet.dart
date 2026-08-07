@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:antrein/core/extensions/extensions.dart';
+import 'package:antrein/core/files/image_picker_field.dart';
 import 'package:antrein/core/ui/dimens.dart';
 import 'package:antrein/core/ui/widgets/widgets.dart';
 import 'package:antrein/features/service_management/domain/entities/managed_service.dart';
@@ -44,6 +45,8 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   late final TextEditingController _deposit;
   late Set<String> _staffIds;
   late bool _isActive;
+  String? _imageUrl;
+  String? _imageFileId;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
     );
     _staffIds = {...?service?.eligibleStaffIds};
     _isActive = service?.isActive ?? true;
+    _imageUrl = service?.imageUrl;
   }
 
   @override
@@ -102,6 +106,11 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
                 style: context.textTheme.titleMedium,
               ),
               const Gap(Dimens.space16),
+              ImagePickerField(
+                imageUrl: _imageUrl,
+                onPicked: _uploadImage,
+              ),
+              const Gap(Dimens.space12),
               AppTextField(
                 controller: _name,
                 label: l10n.serviceName,
@@ -204,6 +213,21 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
     return parsed == null || parsed < 0 ? l10n.numberInvalid : null;
   }
 
+  /// Uploads immediately so the owner sees the photo before saving; the id is
+  /// only attached when the form is submitted.
+  Future<String?> _uploadImage(String path) async {
+    final result = await context.read<ServiceManagementCubit>().uploadImage(
+      path,
+    );
+    return result.match((failure) => failure.message, (image) {
+      setState(() {
+        _imageUrl = image.url;
+        _imageFileId = image.id;
+      });
+      return null;
+    });
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final navigator = Navigator.of(context);
@@ -216,6 +240,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
         id: widget.service?.id,
         name: _name.text.trim(),
         description: description.isEmpty ? null : description,
+        imageFileId: _imageFileId,
         durationMinutes: int.parse(_duration.text.trim()),
         priceAmount: int.parse(_price.text.trim()),
         depositValue: int.parse(_deposit.text.trim()),

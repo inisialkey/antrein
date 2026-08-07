@@ -111,6 +111,19 @@ docker compose exec -T postgres pg_restore -U antrein -d antrein_restore < /tmp/
 A restore that has never been rehearsed is not a backup. Payment and audit rows
 are the retention-critical tables (backend-brief §95).
 
+### Uploaded images
+
+`pg_dump` covers the `files` rows, not the bytes — those live in the
+`filestorage` Docker volume (ADR 0046). Back it up alongside the database, or a
+restore comes up with every logo and service photo returning 404:
+
+```sh
+docker run --rm -v antrein_filestorage:/data -v /var/backups/antrein:/backup alpine \
+  tar czf /backup/files-$(date +%F).tar.gz -C /data .
+```
+
+Restore by untarring into the same volume with the API stopped.
+
 ## 7. Incident playbooks
 
 ### Payment stuck in `pending_payment`

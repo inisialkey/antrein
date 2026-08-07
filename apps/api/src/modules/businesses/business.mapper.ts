@@ -1,3 +1,4 @@
+import { fileUrl } from '../../common/files/file-url';
 import {
   Business,
   BusinessPolicy,
@@ -70,7 +71,7 @@ export function toBusinessSummary(
     id: business.id,
     name: business.name,
     slug: business.slug,
-    logoUrl: null, // files module pending
+    logoUrl: fileUrl(business.logoFileId),
     coverImageUrl: null,
     rating: ratingOf(business),
     primaryOutlet: outlet
@@ -98,8 +99,8 @@ export function toBusinessDetails(
     name: business.name,
     slug: business.slug,
     description: business.description,
-    logoUrl: null,
-    gallery: [], // files module pending
+    logoUrl: fileUrl(business.logoFileId),
+    gallery: [], // business_gallery has no management endpoint in v1
     status: business.status,
     rating: ratingOf(business),
     supportedPaymentOptions: policy ? paymentOptionsOf(policy) : [],
@@ -133,7 +134,7 @@ export function toManagementResponse(
     name: business.name,
     description: business.description,
     status: business.status,
-    logoUrl: null,
+    logoUrl: fileUrl(business.logoFileId),
     timezone: business.timezone,
     supportedPaymentOptions: policy ? paymentOptionsOf(policy) : [],
     bookingPolicy: policy
